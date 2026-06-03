@@ -21,6 +21,21 @@ enum StatusAbsensi {
   ALPA
 }
 
+enum Hari {
+  SENIN
+  SELASA
+  RABU
+  KAMIS
+  JUMAT
+  SABTU
+}
+
+enum JenisNilai {
+  TUGAS
+  UTS
+  UAS
+}
+
 model User {
   id        String   @id @default(uuid())
   username  String   @unique
@@ -31,7 +46,8 @@ model User {
   
   // Relations
   guru      Guru?
-  siswa     Siswa?
+  siswa     Siswa?   @relation("SiswaUser")
+  orangTua  Siswa?   @relation("OrangTuaUser")
 }
 
 model TahunAjaran {
@@ -42,21 +58,23 @@ model TahunAjaran {
 }
 
 model Kelas {
-  id            String      @id @default(uuid())
-  nama          String      // e.g. "Kelas 10-A"
+  id            String            @id @default(uuid())
+  nama          String            // e.g. "Kelas 10-A"
   tahunAjaranId String
-  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
+  tahunAjaran   TahunAjaran       @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
   siswa         Siswa[]
+  jadwal        JadwalPelajaran[]
 }
 
 model Guru {
-  id       String   @id @default(uuid())
-  nuptk    String   @unique // 16 digit
+  id       String            @id @default(uuid())
+  nuptk    String            @unique // 16 digit
   nama     String
   kontak   String
-  userId   String?  @unique
-  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId   String?           @unique
+  user     User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   absensi  Absensi[]
+  jadwal   JadwalPelajaran[]
 }
 
 model Siswa {
@@ -66,9 +84,15 @@ model Siswa {
   kelasId        String
   kelas          Kelas     @relation(fields: [kelasId], references: [id], onDelete: Cascade)
   kontakOrangTua String
+  
   userId         String?   @unique
-  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user           User?     @relation(fields: [userId], references: [id], name: "SiswaUser", onDelete: SetNull)
+  
+  orangTuaUserId String?   @unique
+  orangTuaUser   User?     @relation(fields: [orangTuaUserId], references: [id], name: "OrangTuaUser", onDelete: SetNull)
+  
   absensi        Absensi[]
+  nilai          Nilai[]
 }
 
 model Absensi {
@@ -84,3 +108,38 @@ model Absensi {
 
   @@unique([siswaId, tanggal])
 }
+
+model MataPelajaran {
+  id     String            @id @default(uuid())
+  nama   String            // e.g. "Matematika"
+  kode   String            @unique // e.g. "MTK"
+  jadwal JadwalPelajaran[]
+  nilai  Nilai[]
+}
+
+model JadwalPelajaran {
+  id              String        @id @default(uuid())
+  kelasId         String
+  kelas           Kelas         @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  guruId          String
+  guru            Guru          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  hari            Hari
+  jamMulai        String        // e.g. "07:30"
+  jamSelesai      String        // e.g. "09:00"
+}
+
+model Nilai {
+  id              String        @id @default(uuid())
+  siswaId         String
+  siswa         Siswa         @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  jenis           JenisNilai
+  nilai           Int           // 0-100
+  keterangan      String?       // e.g. "Tugas 1 Aljabar"
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+

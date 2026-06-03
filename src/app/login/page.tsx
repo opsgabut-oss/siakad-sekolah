@@ -41,6 +41,8 @@ export default function LoginPage() {
         router.push('/admin/dashboard');
       } else if (role === 'GURU') {
         router.push('/guru/dashboard');
+      } else if (role === 'SISWA' || role === 'ORANG_TUA') {
+        router.push('/siswa/dashboard');
       } else {
         router.push('/login');
       }
@@ -147,7 +149,7 @@ export default function LoginPage() {
         {/* Footer Info */}
         <div className="text-center mt-8 pt-6 border-t border-slate-800/60">
           <p className="text-xs text-slate-500">
-            Fase 1: Manajemen Guru, Siswa, & Absensi
+            Fase 2: Portal, Laporan, Jadwal & Nilai
           </p>
         </div>
       </div>

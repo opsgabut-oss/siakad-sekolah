@@ -53,19 +53,33 @@ export default async function GuruLayout({
 
       {/* Footer Nav / Quick Actions (Mobile Bottom Bar) */}
       <footer className="bg-slate-900 border-t border-slate-800 py-3 px-4 sticky bottom-0 z-40">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-2xl mx-auto flex items-center justify-around gap-2 text-center">
           <Link
             href="/guru/dashboard"
-            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-indigo-400 select-none hover:text-indigo-300"
+            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-400 select-none transition-colors"
           >
             <School size={18} />
-            Dashboard
+            Absensi
           </Link>
-          <div className="w-48 shrink-0">
-            <LogoutButton />
-          </div>
+          <Link
+            href="/guru/jadwal"
+            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-400 select-none transition-colors"
+          >
+            <Calendar size={18} />
+            Jadwal Ajar
+          </Link>
+          <Link
+            href="/guru/nilai"
+            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-400 select-none transition-colors"
+          >
+            <GraduationCap size={18} />
+            Input Nilai
+          </Link>
+          <MiniLogoutButton />
         </div>
       </footer>
     </div>
   );
 }
+
+import MiniLogoutButton from './MiniLogoutButton';

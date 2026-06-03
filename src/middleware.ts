@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
 
   // 1. Jika tidak ada token dan mengakses rute terproteksi, redirect ke /login
   if (!token) {
-    if (pathname.startsWith('/admin') || pathname.startsWith('/guru') || pathname === '/') {
+    if (pathname.startsWith('/admin') || pathname.startsWith('/guru') || pathname.startsWith('/siswa') || pathname === '/') {
       const loginUrl = new URL('/login', request.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -27,19 +27,29 @@ export function middleware(request: NextRequest) {
 
     // 2. Proteksi rute Admin TU
     if (pathname.startsWith('/admin') && role !== 'ADMIN') {
-      const target = role === 'GURU' ? '/guru/dashboard' : '/login';
+      const target = role === 'GURU' ? '/guru/dashboard' : (role === 'SISWA' || role === 'ORANG_TUA' ? '/siswa/dashboard' : '/login');
       return NextResponse.redirect(new URL(target, request.url));
     }
 
     // 3. Proteksi rute Guru
     if (pathname.startsWith('/guru') && role !== 'GURU') {
-      const target = role === 'ADMIN' ? '/admin/dashboard' : '/login';
+      const target = role === 'ADMIN' ? '/admin/dashboard' : (role === 'SISWA' || role === 'ORANG_TUA' ? '/siswa/dashboard' : '/login');
       return NextResponse.redirect(new URL(target, request.url));
     }
 
-    // 4. Jika mengakses login atau root tapi sudah login, arahkan ke dashboard masing-masing
+    // 4. Proteksi rute Siswa & Orang Tua
+    if (pathname.startsWith('/siswa') && role !== 'SISWA' && role !== 'ORANG_TUA') {
+      const target = role === 'ADMIN' ? '/admin/dashboard' : (role === 'GURU' ? '/guru/dashboard' : '/login');
+      return NextResponse.redirect(new URL(target, request.url));
+    }
+
+    // 5. Jika mengakses login atau root tapi sudah login, arahkan ke dashboard masing-masing
     if (pathname === '/login' || pathname === '/') {
-      const target = role === 'ADMIN' ? '/admin/dashboard' : '/guru/dashboard';
+      const target = role === 'ADMIN' 
+        ? '/admin/dashboard' 
+        : role === 'GURU' 
+          ? '/guru/dashboard' 
+          : '/siswa/dashboard';
       return NextResponse.redirect(new URL(target, request.url));
     }
   } catch (error) {
@@ -53,5 +63,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/login', '/admin/:path*', '/guru/:path*'],
+  matcher: ['/', '/login', '/admin/:path*', '/guru/:path*', '/siswa/:path*'],
 };

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import Link from 'next/link';
-import { Users, GraduationCap, LayoutDashboard, LogOut, ShieldAlert } from 'lucide-react';
+import { Users, GraduationCap, LayoutDashboard, LogOut, ShieldAlert, BookOpen, Calendar, FileSpreadsheet } from 'lucide-react';
 
 export default async function AdminLayout({
   children,
@@ -27,7 +27,7 @@ export default async function AdminLayout({
             </div>
             <div>
               <h2 className="font-extrabold text-white text-md tracking-wide">SIAKAD ADMIN</h2>
-              <p className="text-xs text-slate-500 font-medium">Fase 1: TU & Absensi</p>
+              <p className="text-xs text-slate-500 font-medium">Fase 2: Portal & Laporan</p>
             </div>
           </div>
 
@@ -67,6 +67,27 @@ export default async function AdminLayout({
             >
               <GraduationCap size={18} />
               Data Siswa
+            </Link>
+            <Link
+              href="/admin/mapel"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <BookOpen size={18} />
+              Mata Pelajaran
+            </Link>
+            <Link
+              href="/admin/jadwal"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <Calendar size={18} />
+              Jadwal Pelajaran
+            </Link>
+            <Link
+              href="/admin/laporan"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <FileSpreadsheet size={18} />
+              Laporan Absensi
             </Link>
           </nav>
         </div>

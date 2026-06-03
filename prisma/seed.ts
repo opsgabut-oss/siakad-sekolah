@@ -98,7 +98,42 @@ async function main() {
       userId: userGuru2.id,
     },
   });
-  console.log('Created Guru profiles for:', guru1.nama, 'and', guru2.nama);
+
+  // Staf Tata Usaha / Tenaga Kependidikan (tanpa NIP, pakai NIK)
+  const userGuru3 = await prisma.user.create({
+    data: {
+      username: '3318121508890001',
+      password: passwordGuru,
+      role: Role.GURU,
+    },
+  });
+
+  const guru3 = await prisma.guru.create({
+    data: {
+      nik: '3318121508890001',
+      nama: 'Eko Prasetyo (TU)',
+      kontak: '085333444555',
+      userId: userGuru3.id,
+    },
+  });
+
+  console.log('Created Guru/Staff profiles for:', guru1.nama, ',', guru2.nama, ', and', guru3.nama);
+
+  // Seed sample AbsensiGuru (Kehadiran Mandiri Guru & Staf)
+  const today = new Date();
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
+
+  await prisma.absensiGuru.createMany({
+    data: [
+      { guruId: guru1.id, tanggal: yesterday, status: 'HADIR' },
+      { guruId: guru1.id, tanggal: twoDaysAgo, status: 'HADIR' },
+      { guruId: guru2.id, tanggal: yesterday, status: 'HADIR' },
+      { guruId: guru2.id, tanggal: twoDaysAgo, status: 'SAKIT', keterangan: 'Sakit Demam' },
+      { guruId: guru3.id, tanggal: yesterday, status: 'HADIR' },
+      { guruId: guru3.id, tanggal: twoDaysAgo, status: 'IZIN', keterangan: 'Izin Pernikahan Saudara' },
+    ]
+  });
 
   // 4. Create Kelas (Kelas 1 - 6)
   const kelas1 = await prisma.kelas.create({

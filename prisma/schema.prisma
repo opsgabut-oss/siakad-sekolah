@@ -75,17 +75,32 @@ model Kelas {
 }
 
 model Guru {
-  id       String            @id @default(uuid())
-  nip      String            @unique // 18 digit
-  nama     String
-  kontak   String
-  userId   String?           @unique
-  user     User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
-  absensi  Absensi[]
-  jadwal   JadwalPelajaran[]
+  id          String            @id @default(uuid())
+  nip         String?           @unique // 18 digit (opsional)
+  nik         String?           @unique // 16 digit (opsional)
+  nama        String
+  kontak      String
+  userId      String?           @unique
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  absensi     Absensi[]
+  absensiGuru AbsensiGuru[]
+  jadwal      JadwalPelajaran[]
   
   kelasWali Kelas?           @relation("WaliKelas")
   jurnalHarian JurnalHarian[]
+}
+
+model AbsensiGuru {
+  id         String        @id @default(uuid())
+  guruId     String
+  guru       Guru          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  tanggal    DateTime      @db.Date
+  status     StatusAbsensi // HADIR, IZIN, SAKIT, ALPA
+  keterangan String?       // e.g. "Sakit Flu", "Izin Acara Keluarga"
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([guruId, tanggal])
 }
 
 model Siswa {

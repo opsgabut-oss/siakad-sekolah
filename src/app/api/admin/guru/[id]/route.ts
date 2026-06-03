@@ -13,30 +13,56 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { nip, nama, kontak } = await request.json();
+    const { nip, nik, nama, kontak } = await request.json();
 
-    if (!nip || nip.length !== 18 || isNaN(Number(nip))) {
+    if (!nip && !nik) {
+      return NextResponse.json({ message: 'NIP atau NIK wajib diisi' }, { status: 400 });
+    }
+
+    if (nip && (nip.length !== 18 || isNaN(Number(nip)))) {
       return NextResponse.json({ message: 'NIP harus 18 digit angka' }, { status: 400 });
+    }
+
+    if (nik && (nik.length !== 16 || isNaN(Number(nik)))) {
+      return NextResponse.json({ message: 'NIK harus 16 digit angka' }, { status: 400 });
     }
 
     if (!nama || !kontak) {
       return NextResponse.json({ message: 'Nama dan kontak wajib diisi' }, { status: 400 });
     }
 
-    const existingGuru = await prisma.guru.findFirst({
-      where: {
-        nip,
-        NOT: { id }
+    if (nip) {
+      const existingNip = await prisma.guru.findFirst({
+        where: {
+          nip,
+          NOT: { id }
+        }
+      });
+      if (existingNip) {
+        return NextResponse.json({ message: 'NIP sudah digunakan oleh guru lain' }, { status: 400 });
       }
-    });
+    }
 
-    if (existingGuru) {
-      return NextResponse.json({ message: 'NIP sudah digunakan oleh guru lain' }, { status: 400 });
+    if (nik) {
+      const existingNik = await prisma.guru.findFirst({
+        where: {
+          nik,
+          NOT: { id }
+        }
+      });
+      if (existingNik) {
+        return NextResponse.json({ message: 'NIK sudah digunakan oleh guru lain' }, { status: 400 });
+      }
     }
 
     const updatedGuru = await prisma.guru.update({
       where: { id },
-      data: { nip, nama, kontak }
+      data: { 
+        nip: nip || null, 
+        nik: nik || null, 
+        nama, 
+        kontak 
+      }
     });
 
     return NextResponse.json(updatedGuru);

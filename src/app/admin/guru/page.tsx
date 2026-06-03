@@ -5,7 +5,8 @@ import { Plus, Edit2, Trash2, Search, X, Loader2, User, Phone, Check } from 'luc
 
 interface Guru {
   id: string;
-  nip: string;
+  nip: string | null;
+  nik: string | null;
   nama: string;
   kontak: string;
   user: {
@@ -25,6 +26,7 @@ export default function AdminGuruPage() {
   
   // Form State
   const [nip, setNip] = useState('');
+  const [nik, setNik] = useState('');
   const [nama, setNama] = useState('');
   const [kontak, setKontak] = useState('');
   const [formError, setFormError] = useState('');
@@ -51,6 +53,7 @@ export default function AdminGuruPage() {
   const handleOpenAdd = () => {
     setEditingId(null);
     setNip('');
+    setNik('');
     setNama('');
     setKontak('');
     setFormError('');
@@ -59,7 +62,8 @@ export default function AdminGuruPage() {
 
   const handleOpenEdit = (guru: Guru) => {
     setEditingId(guru.id);
-    setNip(guru.nip);
+    setNip(guru.nip || '');
+    setNik(guru.nik || '');
     setNama(guru.nama);
     setKontak(guru.kontak);
     setFormError('');
@@ -73,13 +77,23 @@ export default function AdminGuruPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nip || !nama || !kontak) {
-      setFormError('Semua kolom wajib diisi');
+    if (!nama || !kontak) {
+      setFormError('Nama dan Kontak wajib diisi');
       return;
     }
 
-    if (nip.length !== 18 || isNaN(Number(nip))) {
+    if (!nip && !nik) {
+      setFormError('NIP atau NIK wajib diisi salah satu');
+      return;
+    }
+
+    if (nip && (nip.length !== 18 || isNaN(Number(nip)))) {
       setFormError('NIP harus tepat 18 digit angka');
+      return;
+    }
+
+    if (nik && (nik.length !== 16 || isNaN(Number(nik)))) {
+      setFormError('NIK harus tepat 16 digit angka');
       return;
     }
 
@@ -93,7 +107,12 @@ export default function AdminGuruPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nip, nama, kontak }),
+        body: JSON.stringify({ 
+          nip: nip || null, 
+          nik: nik || null, 
+          nama, 
+          kontak 
+        }),
       });
 
       const data = await res.json();
@@ -133,7 +152,8 @@ export default function AdminGuruPage() {
   // Filter Search
   const filteredGuru = guruList.filter(g =>
     g.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    g.nip.includes(searchTerm) ||
+    (g.nip || '').includes(searchTerm) ||
+    (g.nik || '').includes(searchTerm) ||
     (g.user?.username.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
@@ -195,7 +215,7 @@ export default function AdminGuruPage() {
               <thead>
                 <tr className="border-b border-slate-800/80 bg-slate-950/20 text-slate-400 text-xs font-semibold uppercase tracking-wider">
                   <th className="px-6 py-4">Nama Lengkap</th>
-                  <th className="px-6 py-4">NIP (18 Digit)</th>
+                  <th className="px-6 py-4">Identitas (NIP / NIK)</th>
                   <th className="px-6 py-4">Kontak HP</th>
                   <th className="px-6 py-4">Username Akun</th>
                   <th className="px-6 py-4 text-right">Aksi</th>
@@ -205,7 +225,9 @@ export default function AdminGuruPage() {
                 {filteredGuru.map((guru) => (
                   <tr key={guru.id} className="hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 font-semibold text-slate-100">{guru.nama}</td>
-                    <td className="px-6 py-4 font-mono text-slate-400">{guru.nip}</td>
+                    <td className="px-6 py-4 font-mono text-slate-400">
+                      {guru.nip ? `${guru.nip} (NIP)` : guru.nik ? `${guru.nik} (NIK)` : '-'}
+                    </td>
                     <td className="px-6 py-4">{guru.kontak}</td>
                     <td className="px-6 py-4">
                       {guru.user ? (
@@ -269,14 +291,29 @@ export default function AdminGuruPage() {
               {/* NIP */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-300 uppercase block">
-                  NIP (18 Digit)
+                  NIP (18 Digit - Opsional)
                 </label>
                 <input
                   type="text"
                   maxLength={18}
                   value={nip}
                   onChange={(e) => setNip(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="Masukkan 18 digit NIP..."
+                  placeholder="Masukkan NIP (jika PNS)..."
+                  className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
+                />
+              </div>
+
+              {/* NIK */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-300 uppercase block">
+                  NIK (16 Digit - Opsional)
+                </label>
+                <input
+                  type="text"
+                  maxLength={16}
+                  value={nik}
+                  onChange={(e) => setNik(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="Masukkan NIK KTP..."
                   className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
                 />
               </div>
@@ -322,7 +359,7 @@ export default function AdminGuruPage() {
               {!editingId && (
                 <div className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-xl">
                   <p className="text-[10px] text-indigo-400 font-medium leading-relaxed">
-                    💡 <strong>Informasi Akun:</strong> Akun guru akan dibuat otomatis. Username menggunakan NIP murni, dan password default disetel sebagai <strong>guru123</strong>.
+                    💡 <strong>Informasi Akun:</strong> Akun guru/staf akan dibuat otomatis. Username menggunakan **NIP** (atau **NIK** jika NIP kosong) sebagai kredensial login, dan password default disetel sebagai <strong>guru123</strong>.
                   </p>
                 </div>
               )}

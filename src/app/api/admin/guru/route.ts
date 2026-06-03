@@ -32,27 +32,46 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { nip, nama, kontak } = await request.json();
+    const { nip, nik, nama, kontak } = await request.json();
 
-    if (!nip || nip.length !== 18 || isNaN(Number(nip))) {
+    if (!nip && !nik) {
+      return NextResponse.json({ message: 'NIP atau NIK wajib diisi' }, { status: 400 });
+    }
+
+    if (nip && (nip.length !== 18 || isNaN(Number(nip)))) {
       return NextResponse.json({ message: 'NIP harus 18 digit angka' }, { status: 400 });
+    }
+
+    if (nik && (nik.length !== 16 || isNaN(Number(nik)))) {
+      return NextResponse.json({ message: 'NIK harus 16 digit angka' }, { status: 400 });
     }
 
     if (!nama || !kontak) {
       return NextResponse.json({ message: 'Nama dan kontak wajib diisi' }, { status: 400 });
     }
 
-    // Cek apakah NIP sudah ada
-    const existingGuru = await prisma.guru.findUnique({
-      where: { nip }
-    });
-
-    if (existingGuru) {
-      return NextResponse.json({ message: 'Guru dengan NIP ini sudah terdaftar' }, { status: 400 });
+    // Cek keunikan NIP jika disediakan
+    if (nip) {
+      const existingNip = await prisma.guru.findUnique({
+        where: { nip }
+      });
+      if (existingNip) {
+        return NextResponse.json({ message: 'Guru dengan NIP ini sudah terdaftar' }, { status: 400 });
+      }
     }
 
-    // Username otomatis menggunakan NIP murni
-    const username = nip;
+    // Cek keunikan NIK jika disediakan
+    if (nik) {
+      const existingNik = await prisma.guru.findUnique({
+        where: { nik }
+      });
+      if (existingNik) {
+        return NextResponse.json({ message: 'Guru dengan NIK ini sudah terdaftar' }, { status: 400 });
+      }
+    }
+
+    // Username otomatis menggunakan NIP (jika ada), jika tidak pakai NIK
+    const username = nip || nik;
 
     // Hash password default 'guru123'
     const hashedPassword = await bcrypt.hash('guru123', 10);
@@ -68,7 +87,8 @@ export async function POST(request: Request) {
 
       const newGuru = await tx.guru.create({
         data: {
-          nip,
+          nip: nip || null,
+          nik: nik || null,
           nama,
           kontak,
           userId: newUser.id

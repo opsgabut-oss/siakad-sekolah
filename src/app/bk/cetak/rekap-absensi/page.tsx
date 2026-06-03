@@ -127,7 +127,14 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
           <img 
             src={profil!.logoPemdaUrl!} 
             alt="Logo Pemda" 
-            className="w-14 h-14 absolute left-0 object-contain print:block"
+            className="w-14 h-14 absolute left-0 top-1/2 -translate-y-1/2 object-contain print:block"
+          />
+        )}
+        {isValidImageUrl(profil?.logoSekolahUrl) && (
+          <img 
+            src={profil!.logoSekolahUrl!} 
+            alt="Logo Sekolah" 
+            className="w-14 h-14 absolute right-0 top-1/2 -translate-y-1/2 object-contain print:block"
           />
         )}
         <div className={`flex-1 text-center ${isValidImageUrl(profil?.logoPemdaUrl) ? 'pl-16' : ''} ${isValidImageUrl(profil?.logoSekolahUrl) ? 'pr-16' : ''}`}>
@@ -144,13 +151,6 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
             Laporan Rekapitulasi Absensi Bulanan • Kelas: {kelas.nama} • Periode: {namaBulan} • TA: {kelas.tahunAjaran.tahun}
           </p>
         </div>
-        {isValidImageUrl(profil?.logoSekolahUrl) && (
-          <img 
-            src={profil!.logoSekolahUrl!} 
-            alt="Logo Sekolah" 
-            className="w-14 h-14 absolute right-0 object-contain print:block"
-          />
-        )}
       </div>
 
       <div className="mt-3 flex justify-between text-[10px] text-slate-650">

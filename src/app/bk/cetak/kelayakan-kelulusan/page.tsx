@@ -105,12 +105,19 @@ export default async function KelayakanKelulusanPrintPage({ searchParams }: Page
       `}} />
 
       {/* Kop Dokumen */}
-      <div className="border-b-2 border-black pb-4 text-center relative flex items-center justify-center min-h-[80px]">
+      <div className="border-b-2 border-black pb-3 text-center relative flex items-center justify-center min-h-[70px]">
         {isValidImageUrl(profil?.logoPemdaUrl) && (
           <img 
             src={profil!.logoPemdaUrl!} 
             alt="Logo Pemda" 
-            className="w-14 h-14 absolute left-0 object-contain print:block"
+            className="w-14 h-14 absolute left-0 top-1/2 -translate-y-1/2 object-contain print:block"
+          />
+        )}
+        {isValidImageUrl(profil?.logoSekolahUrl) && (
+          <img 
+            src={profil!.logoSekolahUrl!} 
+            alt="Logo Sekolah" 
+            className="w-14 h-14 absolute right-0 top-1/2 -translate-y-1/2 object-contain print:block"
           />
         )}
         <div className={`flex-1 text-center ${isValidImageUrl(profil?.logoPemdaUrl) ? 'pl-16' : ''} ${isValidImageUrl(profil?.logoSekolahUrl) ? 'pr-16' : ''}`}>
@@ -130,13 +137,6 @@ export default async function KelayakanKelulusanPrintPage({ searchParams }: Page
             Tahun Ajaran: {siswa.kelas.tahunAjaran.tahun}
           </p>
         </div>
-        {isValidImageUrl(profil?.logoSekolahUrl) && (
-          <img 
-            src={profil!.logoSekolahUrl!} 
-            alt="Logo Sekolah" 
-            className="w-14 h-14 absolute right-0 object-contain print:block"
-          />
-        )}
       </div>
 
       {/* Detail Siswa */}

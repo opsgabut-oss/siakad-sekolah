@@ -80,7 +80,14 @@ export default async function SuratPanggilanPrintPage({ searchParams }: PageProp
           <img 
             src={profil!.logoPemdaUrl!} 
             alt="Logo Pemda" 
-            className="w-16 h-16 absolute left-0 object-contain print:block"
+            className="w-16 h-16 absolute left-0 top-1/2 -translate-y-1/2 object-contain print:block"
+          />
+        )}
+        {isValidImageUrl(profil?.logoSekolahUrl) && (
+          <img 
+            src={profil!.logoSekolahUrl!} 
+            alt="Logo Sekolah" 
+            className="w-16 h-16 absolute right-0 top-1/2 -translate-y-1/2 object-contain print:block"
           />
         )}
         <div className={`flex-1 text-center space-y-1 ${isValidImageUrl(profil?.logoPemdaUrl) ? 'pl-20' : ''} ${isValidImageUrl(profil?.logoSekolahUrl) ? 'pr-20' : ''}`}>
@@ -102,13 +109,6 @@ export default async function SuratPanggilanPrintPage({ searchParams }: PageProp
             </p>
           )}
         </div>
-        {isValidImageUrl(profil?.logoSekolahUrl) && (
-          <img 
-            src={profil!.logoSekolahUrl!} 
-            alt="Logo Sekolah" 
-            className="w-16 h-16 absolute right-0 object-contain print:block"
-          />
-        )}
       </div>
 
       {/* Detail Surat */}

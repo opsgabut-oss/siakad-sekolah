@@ -164,7 +164,14 @@ export default async function MonthlyTeacherAttendancePrintPage({ searchParams }
           <img 
             src={profil!.logoPemdaUrl!} 
             alt="Logo Pemda" 
-            className="w-14 h-14 absolute left-0 object-contain print:block"
+            className="w-14 h-14 absolute left-0 top-1/2 -translate-y-1/2 object-contain print:block"
+          />
+        )}
+        {isValidImageUrl(profil?.logoSekolahUrl) && (
+          <img 
+            src={profil!.logoSekolahUrl!} 
+            alt="Logo Sekolah" 
+            className="w-14 h-14 absolute right-0 top-1/2 -translate-y-1/2 object-contain print:block"
           />
         )}
         <div className={`flex-1 text-center ${isValidImageUrl(profil?.logoPemdaUrl) ? 'pl-16' : ''} ${isValidImageUrl(profil?.logoSekolahUrl) ? 'pr-16' : ''}`}>
@@ -181,13 +188,6 @@ export default async function MonthlyTeacherAttendancePrintPage({ searchParams }
             Kartu Rekapitulasi Absensi Bulanan Pendidik & Staf
           </p>
         </div>
-        {isValidImageUrl(profil?.logoSekolahUrl) && (
-          <img 
-            src={profil!.logoSekolahUrl!} 
-            alt="Logo Sekolah" 
-            className="w-14 h-14 absolute right-0 object-contain print:block"
-          />
-        )}
       </div>
 
       {/* Detail Guru */}

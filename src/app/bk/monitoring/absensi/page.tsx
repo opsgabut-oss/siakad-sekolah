@@ -24,6 +24,7 @@ interface LaporanAbsensiRow {
 export default function BKMonitoringAbsensiPage() {
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [selectedKelasId, setSelectedKelasId] = useState('');
+  const [selectedBulan, setSelectedBulan] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [error, setError] = useState('');
@@ -44,11 +45,12 @@ export default function BKMonitoringAbsensiPage() {
 
   useEffect(() => {
     if (selectedKelasId) {
-      fetchLaporanData(selectedKelasId);
+      fetchLaporanData(selectedKelasId, selectedBulan);
     } else {
       setLaporanRows([]);
     }
-  }, [selectedKelasId]);
+  }, [selectedKelasId, selectedBulan]);
+
 
   const fetchKelas = async () => {
     setLoadingConfig(true);
@@ -79,11 +81,15 @@ export default function BKMonitoringAbsensiPage() {
     }
   };
 
-  const fetchLaporanData = async (kelasId: string) => {
+  const fetchLaporanData = async (kelasId: string, bulan: string) => {
     setLoading(true);
     setError('');
     try {
-      const resRekap = await fetch(`/api/admin/laporan/rekap?kelasId=${kelasId}`);
+      let url = `/api/admin/laporan/rekap?kelasId=${kelasId}`;
+      if (bulan) {
+        url += `&bulan=${bulan}`;
+      }
+      const resRekap = await fetch(url);
       if (!resRekap.ok) throw new Error('Gagal memuat rekap absensi');
       const data = await resRekap.json();
       
@@ -103,7 +109,11 @@ export default function BKMonitoringAbsensiPage() {
 
   const handleExportCSV = () => {
     if (!selectedKelasId) return;
-    window.open(`/api/admin/laporan/absensi?kelasId=${selectedKelasId}`, '_blank');
+    let url = `/api/admin/laporan/absensi?kelasId=${selectedKelasId}`;
+    if (selectedBulan) {
+      url += `&bulan=${selectedBulan}`;
+    }
+    window.open(url, '_blank');
   };
 
   const handlePrint = () => {
@@ -117,6 +127,14 @@ export default function BKMonitoringAbsensiPage() {
   const getSelectedKelasTahun = () => {
     return kelasList.find(k => k.id === selectedKelasId)?.tahunAjaran.tahun || '';
   };
+
+  const getSelectedBulanLabel = () => {
+    if (!selectedBulan) return 'Semua Bulan';
+    const [year, month] = selectedBulan.split('-');
+    const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+    return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  };
+
 
   if (loadingConfig) {
     return (
@@ -170,13 +188,24 @@ export default function BKMonitoringAbsensiPage() {
         <div className="flex gap-2">
           {selectedKelasId && laporanRows.length > 0 && (
             <>
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs shadow-lg transition-all duration-200 cursor-pointer select-none"
-              >
-                <Printer size={14} />
-                Cetak Laporan
-              </button>
+              {selectedBulan ? (
+                <a
+                  href={`/bk/cetak/rekap-absensi?kelasId=${selectedKelasId}&bulan=${selectedBulan}`}
+                  target="_blank"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-violet-500 to-indigo-600 hover:from-violet-650 hover:to-indigo-705 text-white rounded-xl font-semibold text-xs shadow-lg shadow-violet-500/10 transition-all duration-200 cursor-pointer select-none"
+                >
+                  <Printer size={14} />
+                  Cetak Rekap Bulanan
+                </a>
+              ) : (
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs shadow-lg transition-all duration-200 cursor-pointer select-none"
+                >
+                  <Printer size={14} />
+                  Cetak Layar
+                </button>
+              )}
               <button
                 onClick={handleExportCSV}
                 className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs shadow-lg shadow-emerald-500/20 transition-all duration-200 cursor-pointer select-none"
@@ -201,7 +230,7 @@ export default function BKMonitoringAbsensiPage() {
         <div className="flex-1 text-center">
           <h2 className="text-sm font-bold uppercase tracking-wider leading-none">{profil?.pemerintah || 'Pemerintah Kabupaten Pati'}</h2>
           <h3 className="text-base font-black uppercase tracking-wide leading-tight mt-1">{profil?.namaSekolah || 'SD Negeri Wedusan'}</h3>
-          <p className="text-xs mt-1">Laporan Rekapitulasi Absensi Siswa • Kelas: {getSelectedKelasNama()} • TA: {getSelectedKelasTahun()}</p>
+          <p className="text-xs mt-1">Laporan Rekapitulasi Absensi Siswa • Kelas: {getSelectedKelasNama()} • Periode: {getSelectedBulanLabel()} • TA: {getSelectedKelasTahun()}</p>
           <p className="text-[10px] text-slate-500 font-bold uppercase">Dicetak pada tanggal: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
       </div>
@@ -214,24 +243,45 @@ export default function BKMonitoringAbsensiPage() {
       )}
 
       {/* Filter & Pemilihan Kelas */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
-        <div className="w-full sm:w-auto flex items-center gap-3">
-          <label className="text-sm font-semibold text-slate-305 whitespace-nowrap">Pilih Kelas:</label>
-          <select
-            value={selectedKelasId}
-            onChange={(e) => setSelectedKelasId(e.target.value)}
-            className="w-full sm:w-64 px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-violet-500 transition-colors"
-          >
-            {kelasList.map((k) => (
-              <option key={k.id} value={k.id}>
-                {k.nama}
-              </option>
-            ))}
-          </select>
+      <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col lg:flex-row items-center justify-between gap-4 no-print">
+        <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <label className="text-sm font-semibold text-slate-300 whitespace-nowrap">Pilih Kelas:</label>
+            <select
+              value={selectedKelasId}
+              onChange={(e) => setSelectedKelasId(e.target.value)}
+              className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-violet-500 transition-colors"
+            >
+              {kelasList.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <label className="text-sm font-semibold text-slate-300 whitespace-nowrap">Pilih Bulan:</label>
+            <input
+              type="month"
+              value={selectedBulan}
+              onChange={(e) => setSelectedBulan(e.target.value)}
+              className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-violet-500 transition-colors"
+            />
+            {selectedBulan && (
+              <button
+                type="button"
+                onClick={() => setSelectedBulan('')}
+                className="text-xs text-slate-500 hover:text-slate-300 underline cursor-pointer whitespace-nowrap"
+              >
+                Semua Bulan
+              </button>
+            )}
+          </div>
         </div>
         {selectedKelasId && (
           <button
-            onClick={() => fetchLaporanData(selectedKelasId)}
+            onClick={() => fetchLaporanData(selectedKelasId, selectedBulan)}
             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors w-full sm:w-auto cursor-pointer"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -239,6 +289,7 @@ export default function BKMonitoringAbsensiPage() {
           </button>
         )}
       </div>
+
 
       {/* Grid Statistik Ringkas */}
       {selectedKelasId && laporanRows.length > 0 && (

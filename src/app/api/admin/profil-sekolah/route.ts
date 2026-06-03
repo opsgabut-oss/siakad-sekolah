@@ -23,7 +23,8 @@ export async function GET() {
           telepon: '081234567890',
           email: 'sdnwedusan@gmail.com',
           website: 'www.sdnwedusan.sch.id',
-          logoUrl: null,
+          logoPemdaUrl: null,
+          logoSekolahUrl: null,
           namaKepsek: 'Sudarto, S.Pd',
           nipKepsek: '197408122005011002'
         }
@@ -61,7 +62,8 @@ export async function PUT(request: Request) {
       telepon, 
       email, 
       website, 
-      logoUrl, 
+      logoPemdaUrl,
+      logoSekolahUrl,
       namaKepsek, 
       nipKepsek,
       tahunAjaranAktif 
@@ -84,7 +86,8 @@ export async function PUT(request: Request) {
           telepon,
           email,
           website,
-          logoUrl,
+          logoPemdaUrl,
+          logoSekolahUrl,
           namaKepsek,
           nipKepsek
         },
@@ -98,7 +101,8 @@ export async function PUT(request: Request) {
           telepon,
           email,
           website,
-          logoUrl,
+          logoPemdaUrl,
+          logoSekolahUrl,
           namaKepsek,
           nipKepsek
         }

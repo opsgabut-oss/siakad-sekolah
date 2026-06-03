@@ -1,4 +1,4 @@
-import { PrismaClient, Role, Hari, JenisNilai } from '@prisma/client';
+import { PrismaClient, Role, Hari } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -305,37 +305,41 @@ async function main() {
   });
   console.log('Created Jadwal Pelajaran for Kelas 6');
 
-  // 8. Create Nilai Rapor (Rian Hidayat)
+  // 8. Create Nilai Rapor (Rian Hidayat & Laras Ati)
   await prisma.nilai.createMany({
     data: [
       {
         siswaId: siswa1.id,
         mataPelajaranId: mapelMTK.id,
-        jenis: JenisNilai.TUGAS,
-        nilai: 85,
-        keterangan: 'Tugas Operasi Pecahan',
-      },
-      {
-        siswaId: siswa1.id,
-        mataPelajaranId: mapelMTK.id,
-        jenis: JenisNilai.UTS,
-        nilai: 80,
-        keterangan: 'UTS Semester Ganjil',
-      },
-      {
-        siswaId: siswa1.id,
-        mataPelajaranId: mapelMTK.id,
-        jenis: JenisNilai.UAS,
-        nilai: 88,
-        keterangan: 'UAS Semester Ganjil',
+        harian1: 85,
+        harian2: 90,
+        harian3: 88,
+        harian4: 80,
+        harian5: 85,
+        harian6: 90,
+        uts: 80,
+        uas: 88,
+        rapor: 85, // (avgHarian=86.3 + uts=80 + uas=88)/3 = 84.7 => 85
       },
       {
         siswaId: siswa1.id,
         mataPelajaranId: mapelIND.id,
-        jenis: JenisNilai.TUGAS,
-        nilai: 90,
-        keterangan: 'Tugas Menulis Puisi',
+        harian1: 90,
+        harian2: 85,
+        harian3: 88,
+        uts: 85,
+        uas: 90,
+        rapor: 88,
       },
+      {
+        siswaId: siswa2.id,
+        mataPelajaranId: mapelMTK.id,
+        harian1: 75,
+        harian2: 80,
+        uts: 70,
+        uas: 78,
+        rapor: 75,
+      }
     ],
   });
   console.log('Created sample Grades for Rian Hidayat');

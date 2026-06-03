@@ -32,11 +32,6 @@ enum Hari {
   SABTU
 }
 
-enum JenisNilai {
-  TUGAS
-  UTS
-  UAS
-}
 
 model User {
   id        String   @id @default(uuid())
@@ -163,14 +158,22 @@ model JadwalPelajaran {
 model Nilai {
   id              String        @id @default(uuid())
   siswaId         String
-  siswa         Siswa         @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  siswa           Siswa         @relation(fields: [siswaId], references: [id], onDelete: Cascade)
   mataPelajaranId String
   mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
-  jenis           JenisNilai
-  nilai           Int           // 0-100
-  keterangan      String?       // e.g. "Tugas 1 Aljabar"
+  harian1         Int?
+  harian2         Int?
+  harian3         Int?
+  harian4         Int?
+  harian5         Int?
+  harian6         Int?
+  uts             Int?
+  uas             Int?
+  rapor           Int?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+
+  @@unique([siswaId, mataPelajaranId])
 }
 
 model PelanggaranSiswa {
@@ -235,19 +238,20 @@ model ArsipSurat {
 }
 
 model ProfilSekolah {
-  id            String   @id @default("single-profile")
-  pemerintah    String   @default("Pemerintah Kabupaten Pati")
-  dinas         String   @default("Dinas Pendidikan dan Kebudayaan")
-  namaSekolah   String   @default("SD Negeri Wedusan")
-  npsn          String?  @default("20338123")
-  alamat        String   @default("Jl. Puncel - Ngablak KM. 05 Desa Wedusan, Kec. Dukuhseti, Kab. Pati (59158)")
-  telepon       String?  @default("081234567890")
-  email         String?  @default("sdnwedusan@gmail.com")
-  website       String?  @default("www.sdnwedusan.sch.id")
-  logoUrl       String?  
-  namaKepsek    String   @default("Sudarto, S.Pd")
-  nipKepsek     String?  @default("197408122005011002")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default("single-profile")
+  pemerintah     String   @default("Pemerintah Kabupaten Pati")
+  dinas          String   @default("Dinas Pendidikan dan Kebudayaan")
+  namaSekolah    String   @default("SD Negeri Wedusan")
+  npsn           String?  @default("20338123")
+  alamat         String   @default("Jl. Puncel - Ngablak KM. 05 Desa Wedusan, Kec. Dukuhseti, Kab. Pati (59158)")
+  telepon        String?  @default("081234567890")
+  email          String?  @default("sdnwedusan@gmail.com")
+  website        String?  @default("www.sdnwedusan.sch.id")
+  logoPemdaUrl   String?
+  logoSekolahUrl String?
+  namaKepsek     String   @default("Sudarto, S.Pd")
+  nipKepsek      String?  @default("197408122005011002")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 

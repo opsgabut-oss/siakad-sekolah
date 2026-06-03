@@ -79,27 +79,27 @@ export async function GET() {
 
     // Format tabulasi nilai per mata pelajaran
     const rekapNilai = mapelList.map((mapel) => {
-      const mapelNilai = nilaiList.filter((n) => n.mataPelajaranId === mapel.id);
-      const tugas = mapelNilai.find((n) => n.jenis === 'TUGAS')?.nilai ?? '-';
-      const uts = mapelNilai.find((n) => n.jenis === 'UTS')?.nilai ?? '-';
-      const uas = mapelNilai.find((n) => n.jenis === 'UAS')?.nilai ?? '-';
-
-      // Hitung rata-rata jika ada nilai
-      const validGrades = [tugas, uts, uas].filter((v) => typeof v === 'number') as number[];
-      const rataRata = validGrades.length > 0 
-        ? Math.round(validGrades.reduce((sum, val) => sum + val, 0) / validGrades.length) 
-        : '-';
+      const dbNilai = nilaiList.find((n) => n.mataPelajaranId === mapel.id);
 
       return {
         mapelId: mapel.id,
         namaMapel: mapel.nama,
         kodeMapel: mapel.kode,
-        tugas,
-        uts,
-        uas,
-        rataRata,
+        harian1: dbNilai?.harian1 ?? '-',
+        harian2: dbNilai?.harian2 ?? '-',
+        harian3: dbNilai?.harian3 ?? '-',
+        harian4: dbNilai?.harian4 ?? '-',
+        harian5: dbNilai?.harian5 ?? '-',
+        harian6: dbNilai?.harian6 ?? '-',
+        uts: dbNilai?.uts ?? '-',
+        uas: dbNilai?.uas ?? '-',
+        rapor: dbNilai?.rapor ?? '-',
       };
-    }).filter((r) => r.tugas !== '-' || r.uts !== '-' || r.uas !== '-'); // Tampilkan mapel yang sudah dinilai saja
+    }).filter((r) => 
+      r.harian1 !== '-' || r.harian2 !== '-' || r.harian3 !== '-' ||
+      r.harian4 !== '-' || r.harian5 !== '-' || r.harian6 !== '-' ||
+      r.uts !== '-' || r.uas !== '-'
+    );
 
     return NextResponse.json({
       siswa: {

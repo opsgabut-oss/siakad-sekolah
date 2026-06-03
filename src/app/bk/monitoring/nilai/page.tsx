@@ -18,11 +18,15 @@ interface SiswaNilai {
   siswaId: string;
   nisn: string;
   nama: string;
-  nilai: {
-    TUGAS: { nilai: number; keterangan: string | null } | null;
-    UTS: { nilai: number; keterangan: string | null } | null;
-    UAS: { nilai: number; keterangan: string | null } | null;
-  };
+  harian1: number | null;
+  harian2: number | null;
+  harian3: number | null;
+  harian4: number | null;
+  harian5: number | null;
+  harian6: number | null;
+  uts: number | null;
+  uas: number | null;
+  rapor: number | null;
 }
 
 export default function KepsekNilaiMonitoringPage() {
@@ -84,15 +88,7 @@ export default function KepsekNilaiMonitoringPage() {
     }
   };
 
-  const getRataRata = (nilai: SiswaNilai['nilai']) => {
-    const valid: number[] = [];
-    if (nilai.TUGAS) valid.push(nilai.TUGAS.nilai);
-    if (nilai.UTS) valid.push(nilai.UTS.nilai);
-    if (nilai.UAS) valid.push(nilai.UAS.nilai);
 
-    if (valid.length === 0) return '-';
-    return Math.round(valid.reduce((sum, val) => sum + val, 0) / valid.length);
-  };
 
   if (loadingConfig) {
     return (
@@ -167,36 +163,39 @@ export default function KepsekNilaiMonitoringPage() {
       ) : (
         <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/40 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  <th className="p-4">Nama Siswa</th>
-                  <th className="p-4 text-center">Tugas</th>
-                  <th className="p-4 text-center">UTS</th>
-                  <th className="p-4 text-center">UAS</th>
-                  <th className="p-4 text-right bg-violet-950/10 text-violet-400">Rata-rata</th>
+                <tr className="border-b border-slate-800 bg-slate-950/40 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <th className="p-3">Nama Siswa</th>
+                  <th className="p-3 text-center">H1</th>
+                  <th className="p-3 text-center">H2</th>
+                  <th className="p-3 text-center">H3</th>
+                  <th className="p-3 text-center">H4</th>
+                  <th className="p-3 text-center">H5</th>
+                  <th className="p-3 text-center">H6</th>
+                  <th className="p-3 text-center">UTS</th>
+                  <th className="p-3 text-center">UAS</th>
+                  <th className="p-3 text-right bg-violet-950/10 text-violet-400">Nilai Rapor</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-850 text-sm">
+              <tbody className="divide-y divide-slate-850 text-xs">
                 {nilaiRows.map((row) => {
-                  const rataRata = getRataRata(row.nilai);
                   return (
                     <tr key={row.siswaId} className="hover:bg-slate-900/30 transition-colors">
-                      <td className="p-4">
+                      <td className="p-3">
                         <h4 className="font-bold text-slate-200">{row.nama}</h4>
-                        <p className="text-[10px] text-slate-500 font-semibold uppercase mt-0.5">NISN: {row.nisn}</p>
+                        <p className="text-[9px] text-slate-500 font-semibold uppercase mt-0.5">NISN: {row.nisn}</p>
                       </td>
-                      <td className="p-4 text-center font-semibold text-slate-350">
-                        {row.nilai.TUGAS ? row.nilai.TUGAS.nilai : '-'}
-                      </td>
-                      <td className="p-4 text-center font-semibold text-slate-350">
-                        {row.nilai.UTS ? row.nilai.UTS.nilai : '-'}
-                      </td>
-                      <td className="p-4 text-center font-semibold text-slate-350">
-                        {row.nilai.UAS ? row.nilai.UAS.nilai : '-'}
-                      </td>
-                      <td className="p-4 text-right font-extrabold bg-violet-950/5 text-violet-350">
-                        {rataRata}
+                      <td className="p-3 text-center font-semibold text-slate-350">{row.harian1 ?? '-'}</td>
+                      <td className="p-3 text-center font-semibold text-slate-350">{row.harian2 ?? '-'}</td>
+                      <td className="p-3 text-center font-semibold text-slate-350">{row.harian3 ?? '-'}</td>
+                      <td className="p-3 text-center font-semibold text-slate-350">{row.harian4 ?? '-'}</td>
+                      <td className="p-3 text-center font-semibold text-slate-350">{row.harian5 ?? '-'}</td>
+                      <td className="p-3 text-center font-semibold text-slate-350">{row.harian6 ?? '-'}</td>
+                      <td className="p-3 text-center font-semibold text-slate-350">{row.uts ?? '-'}</td>
+                      <td className="p-3 text-center font-semibold text-slate-350">{row.uas ?? '-'}</td>
+                      <td className="p-3 text-right font-extrabold bg-violet-950/5 text-violet-350">
+                        {row.rapor ?? '-'}
                       </td>
                     </tr>
                   );

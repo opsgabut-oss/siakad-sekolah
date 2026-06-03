@@ -71,14 +71,14 @@ export default async function SuratPanggilanPrintPage({ searchParams }: PageProp
 
       {/* Kop Surat Sekolah */}
       <div className="border-b-4 border-double border-black pb-4 text-center relative flex items-center justify-center min-h-[100px]">
-        {profil?.logoUrl && (
+        {profil?.logoPemdaUrl && (
           <img 
-            src={profil.logoUrl} 
-            alt="Logo" 
+            src={profil.logoPemdaUrl} 
+            alt="Logo Pemda" 
             className="w-16 h-16 absolute left-0 object-contain print:block"
           />
         )}
-        <div className="flex-1 text-center space-y-1 pl-16 pr-16">
+        <div className={`flex-1 text-center space-y-1 ${profil?.logoPemdaUrl ? 'pl-20' : ''} ${profil?.logoSekolahUrl ? 'pr-20' : ''}`}>
           <h3 className="text-xs font-bold uppercase tracking-wider leading-none">
             {profil?.pemerintah || 'Pemerintah Kabupaten Pati'}
           </h3>
@@ -97,6 +97,13 @@ export default async function SuratPanggilanPrintPage({ searchParams }: PageProp
             </p>
           )}
         </div>
+        {profil?.logoSekolahUrl && (
+          <img 
+            src={profil.logoSekolahUrl} 
+            alt="Logo Sekolah" 
+            className="w-16 h-16 absolute right-0 object-contain print:block"
+          />
+        )}
       </div>
 
       {/* Detail Surat */}

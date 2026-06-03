@@ -114,24 +114,34 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
 
       {/* Kop Laporan */}
       <div className="border-b-2 border-black pb-4 text-center relative flex items-center justify-center min-h-[80px]">
-        {profil?.logoUrl && (
+        {profil?.logoPemdaUrl && (
           <img 
-            src={profil.logoUrl} 
-            alt="Logo" 
-            className="w-12 h-12 absolute left-0 object-contain print:block"
+            src={profil.logoPemdaUrl} 
+            alt="Logo Pemda" 
+            className="w-14 h-14 absolute left-0 object-contain print:block"
           />
         )}
-        <div className="flex-1 text-center">
-          <h2 className="text-sm font-bold uppercase tracking-wider leading-none">
+        <div className={`flex-1 text-center ${profil?.logoPemdaUrl ? 'pl-16' : ''} ${profil?.logoSekolahUrl ? 'pr-16' : ''}`}>
+          <h2 className="text-xs font-bold uppercase tracking-wider leading-none">
             {profil?.pemerintah || 'Pemerintah Kabupaten Pati'}
+          </h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider leading-none mt-1">
+            {profil?.dinas || 'Dinas Pendidikan dan Kebudayaan'}
           </h2>
           <h1 className="text-base font-black uppercase tracking-wide leading-tight mt-1">
             {profil?.namaSekolah || 'SD Negeri Wedusan'}
           </h1>
-          <p className="text-xs font-semibold text-slate-500 mt-1">
+          <p className="text-[10px] font-semibold text-slate-500 mt-1">
             Laporan Rekapitulasi Absensi Bulanan • Kelas: {kelas.nama} • Periode: {namaBulan} • TA: {kelas.tahunAjaran.tahun}
           </p>
         </div>
+        {profil?.logoSekolahUrl && (
+          <img 
+            src={profil.logoSekolahUrl} 
+            alt="Logo Sekolah" 
+            className="w-14 h-14 absolute right-0 object-contain print:block"
+          />
+        )}
       </div>
 
       <div className="mt-4 flex justify-between text-xs text-slate-650">

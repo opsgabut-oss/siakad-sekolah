@@ -47,16 +47,13 @@ export default async function KelayakanKelulusanPrintPage({ searchParams }: Page
   // 3. Rekap Akademik (Nilai Rapor)
   const mapelList = await prisma.mataPelajaran.findMany();
   const rekapNilai = mapelList.map((mapel) => {
-    const mapelNilai = siswa.nilai.filter((n) => n.mataPelajaranId === mapel.id);
-    const tugas = mapelNilai.find((n) => n.jenis === 'TUGAS')?.nilai ?? 75; // default 75 jika belum ada
-    const uts = mapelNilai.find((n) => n.jenis === 'UTS')?.nilai ?? 75;
-    const uas = mapelNilai.find((n) => n.jenis === 'UAS')?.nilai ?? 75;
-    const rataRata = Math.round((tugas + uts + uas) / 3);
+    const dbNilai = siswa.nilai.find((n) => n.mataPelajaranId === mapel.id);
+    const rapor = dbNilai?.rapor ?? 75;
 
     return {
       nama: mapel.nama,
       kode: mapel.kode,
-      rataRata,
+      rataRata: rapor,
     };
   });
 
@@ -104,24 +101,37 @@ export default async function KelayakanKelulusanPrintPage({ searchParams }: Page
 
       {/* Kop Dokumen */}
       <div className="border-b-2 border-black pb-4 text-center relative flex items-center justify-center min-h-[80px]">
-        {profil?.logoUrl && (
+        {profil?.logoPemdaUrl && (
           <img 
-            src={profil.logoUrl} 
-            alt="Logo" 
-            className="w-12 h-12 absolute left-0 object-contain print:block"
+            src={profil.logoPemdaUrl} 
+            alt="Logo Pemda" 
+            className="w-14 h-14 absolute left-0 object-contain print:block"
           />
         )}
-        <div className="flex-1 text-center">
-          <h3 className="text-sm font-bold uppercase tracking-wider leading-none">
-            {profil?.namaSekolah || 'SD Negeri Wedusan'}
+        <div className={`flex-1 text-center ${profil?.logoPemdaUrl ? 'pl-16' : ''} ${profil?.logoSekolahUrl ? 'pr-16' : ''}`}>
+          <h3 className="text-xs font-bold uppercase tracking-wider leading-none">
+            {profil?.pemerintah || 'Pemerintah Kabupaten Pati'}
           </h3>
-          <h1 className="text-base font-black uppercase tracking-wide leading-tight mt-1">
+          <h3 className="text-xs font-bold uppercase tracking-wider leading-none mt-1">
+            {profil?.dinas || 'Dinas Pendidikan dan Kebudayaan'}
+          </h3>
+          <h2 className="text-sm font-black uppercase tracking-wider leading-none mt-1">
+            {profil?.namaSekolah || 'SD Negeri Wedusan'}
+          </h2>
+          <h1 className="text-base font-black uppercase tracking-wide leading-tight mt-2">
             Draf Kelayakan Administrasi Kelulusan
           </h1>
-          <p className="text-xs font-semibold text-slate-500 mt-1">
+          <p className="text-[10px] font-semibold text-slate-500 mt-1">
             Tahun Ajaran: {siswa.kelas.tahunAjaran.tahun}
           </p>
         </div>
+        {profil?.logoSekolahUrl && (
+          <img 
+            src={profil.logoSekolahUrl} 
+            alt="Logo Sekolah" 
+            className="w-14 h-14 absolute right-0 object-contain print:block"
+          />
+        )}
       </div>
 
       {/* Detail Siswa */}

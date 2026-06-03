@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { JenisNilai } from '@prisma/client';
 
 export async function GET(request: Request) {
   const user = await getAuthenticatedUser();
@@ -34,16 +33,20 @@ export async function GET(request: Request) {
 
     // Gabungkan data agar mudah diolah di frontend
     const result = siswaList.map((siswa) => {
-      const siswaNilai = nilaiList.filter((n) => n.siswaId === siswa.id);
+      const dbNilai = nilaiList.find((n) => n.siswaId === siswa.id) || null;
       return {
         siswaId: siswa.id,
         nisn: siswa.nisn,
         nama: siswa.nama,
-        nilai: {
-          TUGAS: siswaNilai.find((n) => n.jenis === JenisNilai.TUGAS) || null,
-          UTS: siswaNilai.find((n) => n.jenis === JenisNilai.UTS) || null,
-          UAS: siswaNilai.find((n) => n.jenis === JenisNilai.UAS) || null,
-        },
+        harian1: dbNilai?.harian1 ?? null,
+        harian2: dbNilai?.harian2 ?? null,
+        harian3: dbNilai?.harian3 ?? null,
+        harian4: dbNilai?.harian4 ?? null,
+        harian5: dbNilai?.harian5 ?? null,
+        harian6: dbNilai?.harian6 ?? null,
+        uts: dbNilai?.uts ?? null,
+        uas: dbNilai?.uas ?? null,
+        rapor: dbNilai?.rapor ?? null,
       };
     });
 
@@ -60,32 +63,66 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { mataPelajaranId, jenis, grades } = await request.json();
+    const { mataPelajaranId, grades } = await request.json();
 
-    if (!mataPelajaranId || !jenis || !grades || !Array.isArray(grades)) {
+    if (!mataPelajaranId || !grades || !Array.isArray(grades)) {
       return NextResponse.json({ message: 'Data tidak lengkap' }, { status: 400 });
     }
 
-    if (!Object.values(JenisNilai).includes(jenis)) {
-      return NextResponse.json({ message: 'Jenis nilai tidak valid' }, { status: 400 });
-    }
+    const parseGradeValue = (val: any): number | null => {
+      if (val === undefined || val === null || val === '') return null;
+      const parsed = parseInt(val, 10);
+      if (isNaN(parsed) || parsed < 0 || parsed > 100) {
+        throw new Error('Nilai harus berupa angka antara 0 - 100');
+      }
+      return parsed;
+    };
 
-    // Jalankan upsert menggunakan transaksi interaktif (sequential loop) untuk keamanan dan kompatibilitas ORM:
+    const calculateRapor = (
+      h1: number | null,
+      h2: number | null,
+      h3: number | null,
+      h4: number | null,
+      h5: number | null,
+      h6: number | null,
+      uts: number | null,
+      uas: number | null
+    ): number | null => {
+      const harianVals = [h1, h2, h3, h4, h5, h6].filter((v): v is number => v !== null);
+      const avgHarian = harianVals.length > 0 
+        ? harianVals.reduce((sum, v) => sum + v, 0) / harianVals.length 
+        : null;
+
+      const components: number[] = [];
+      if (avgHarian !== null) components.push(avgHarian);
+      if (uts !== null) components.push(uts);
+      if (uas !== null) components.push(uas);
+
+      if (components.length === 0) return null;
+      return Math.round(components.reduce((sum, v) => sum + v, 0) / components.length);
+    };
+
     const finalResult = await prisma.$transaction(async (tx) => {
       const records = [];
       for (const g of grades) {
-        const { siswaId, nilai, keterangan } = g;
-        if (siswaId && nilai !== undefined && nilai !== null && nilai !== '') {
-          const parsedNilai = parseInt(nilai, 10);
-          if (isNaN(parsedNilai) || parsedNilai < 0 || parsedNilai > 100) {
-            throw new Error('Nilai harus berupa angka antara 0 - 100');
-          }
+        const { siswaId, harian1, harian2, harian3, harian4, harian5, harian6, uts, uas } = g;
+        if (siswaId) {
+          const h1 = parseGradeValue(harian1);
+          const h2 = parseGradeValue(harian2);
+          const h3 = parseGradeValue(harian3);
+          const h4 = parseGradeValue(harian4);
+          const h5 = parseGradeValue(harian5);
+          const h6 = parseGradeValue(harian6);
+          const u = parseGradeValue(uts);
+          const a = parseGradeValue(uas);
+          const r = calculateRapor(h1, h2, h3, h4, h5, h6, u, a);
 
-          const existing = await tx.nilai.findFirst({
+          const existing = await tx.nilai.findUnique({
             where: {
-              siswaId,
-              mataPelajaranId,
-              jenis,
+              siswaId_mataPelajaranId: {
+                siswaId,
+                mataPelajaranId,
+              },
             },
           });
 
@@ -93,8 +130,15 @@ export async function POST(request: Request) {
             const updated = await tx.nilai.update({
               where: { id: existing.id },
               data: {
-                nilai: parsedNilai,
-                keterangan: keterangan || null,
+                harian1: h1,
+                harian2: h2,
+                harian3: h3,
+                harian4: h4,
+                harian5: h5,
+                harian6: h6,
+                uts: u,
+                uas: a,
+                rapor: r,
               },
             });
             records.push(updated);
@@ -103,9 +147,15 @@ export async function POST(request: Request) {
               data: {
                 siswaId,
                 mataPelajaranId,
-                jenis,
-                nilai: parsedNilai,
-                keterangan: keterangan || null,
+                harian1: h1,
+                harian2: h2,
+                harian3: h3,
+                harian4: h4,
+                harian5: h5,
+                harian6: h6,
+                uts: u,
+                uas: a,
+                rapor: r,
               },
             });
             records.push(created);

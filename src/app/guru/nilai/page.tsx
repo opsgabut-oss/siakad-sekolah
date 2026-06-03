@@ -15,20 +15,32 @@ interface SiswaNilaiRow {
   siswaId: string;
   nisn: string;
   nama: string;
-  nilai: {
-    TUGAS: { nilai: number; keterangan: string | null } | null;
-    UTS: { nilai: number; keterangan: string | null } | null;
-    UAS: { nilai: number; keterangan: string | null } | null;
-  };
+  harian1: number | null;
+  harian2: number | null;
+  harian3: number | null;
+  harian4: number | null;
+  harian5: number | null;
+  harian6: number | null;
+  uts: number | null;
+  uas: number | null;
+  rapor: number | null;
 }
 
 export default function InputNilaiPage() {
   const [sesiList, setSesiList] = useState<SesiMengajar[]>([]);
   const [selectedSesiIndex, setSelectedSesiIndex] = useState(-1);
-  const [selectedJenis, setSelectedJenis] = useState<'TUGAS' | 'UTS' | 'UAS'>('TUGAS');
   
   const [siswaNilaiRows, setSiswaNilaiRows] = useState<SiswaNilaiRow[]>([]);
-  const [gradesInput, setGradesInput] = useState<Record<string, { nilai: string; keterangan: string }>>({});
+  const [gradesInput, setGradesInput] = useState<Record<string, {
+    harian1: string;
+    harian2: string;
+    harian3: string;
+    harian4: string;
+    harian5: string;
+    harian6: string;
+    uts: string;
+    uas: string;
+  }>>({});
   
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [loadingSiswa, setLoadingSiswa] = useState(false);
@@ -49,7 +61,7 @@ export default function InputNilaiPage() {
       setSiswaNilaiRows([]);
       setGradesInput({});
     }
-  }, [selectedSesiIndex, selectedJenis]);
+  }, [selectedSesiIndex]);
 
   const fetchSesiMengajar = async () => {
     setLoadingConfig(true);
@@ -97,12 +109,17 @@ export default function InputNilaiPage() {
       setSiswaNilaiRows(data);
       
       // Inisialisasi input form
-      const initialInputs: Record<string, { nilai: string; keterangan: string }> = {};
+      const initialInputs: Record<string, any> = {};
       data.forEach((row) => {
-        const existingGrade = row.nilai[selectedJenis];
         initialInputs[row.siswaId] = {
-          nilai: existingGrade ? existingGrade.nilai.toString() : '',
-          keterangan: existingGrade?.keterangan || '',
+          harian1: row.harian1 !== null ? row.harian1.toString() : '',
+          harian2: row.harian2 !== null ? row.harian2.toString() : '',
+          harian3: row.harian3 !== null ? row.harian3.toString() : '',
+          harian4: row.harian4 !== null ? row.harian4.toString() : '',
+          harian5: row.harian5 !== null ? row.harian5.toString() : '',
+          harian6: row.harian6 !== null ? row.harian6.toString() : '',
+          uts: row.uts !== null ? row.uts.toString() : '',
+          uas: row.uas !== null ? row.uas.toString() : '',
         };
       });
       setGradesInput(initialInputs);
@@ -113,14 +130,55 @@ export default function InputNilaiPage() {
     }
   };
 
-  const handleGradeChange = (siswaId: string, field: 'nilai' | 'keterangan', value: string) => {
-    setGradesInput((prev) => ({
-      ...prev,
-      [siswaId]: {
+  const handleGradeChange = (siswaId: string, field: string, value: string) => {
+    if (value !== '') {
+      const num = parseInt(value, 10);
+      if (isNaN(num) || num < 0 || num > 100) return;
+    }
+
+    setGradesInput((prev) => {
+      const studentInput = {
         ...prev[siswaId],
         [field]: value,
-      },
-    }));
+      };
+
+      // Hitung Rapor secara real-time
+      const harianKeys = ['harian1', 'harian2', 'harian3', 'harian4', 'harian5', 'harian6'];
+      const harianVals = harianKeys
+        .map(k => studentInput[k as keyof typeof studentInput])
+        .filter(v => v !== '')
+        .map(v => parseInt(v, 10));
+      
+      const avgHarian = harianVals.length > 0 
+        ? harianVals.reduce((sum, v) => sum + v, 0) / harianVals.length 
+        : null;
+
+      const components: number[] = [];
+      if (avgHarian !== null) components.push(avgHarian);
+      
+      const utsVal = studentInput.uts;
+      if (utsVal !== '') components.push(parseInt(utsVal, 10));
+
+      const uasVal = studentInput.uas;
+      if (uasVal !== '') components.push(parseInt(uasVal, 10));
+
+      const computedRapor = components.length > 0 
+        ? Math.round(components.reduce((sum, v) => sum + v, 0) / components.length)
+        : null;
+
+      setSiswaNilaiRows((currentRows) => 
+        currentRows.map((row) => 
+          row.siswaId === siswaId 
+            ? { ...row, rapor: computedRapor } 
+            : row
+        )
+      );
+
+      return {
+        ...prev,
+        [siswaId]: studentInput,
+      };
+    });
   };
 
   const handleSave = async () => {
@@ -131,14 +189,17 @@ export default function InputNilaiPage() {
     setError('');
     setSuccess('');
 
-    // Siapkan payload
-    const payloadGrades = Object.entries(gradesInput)
-      .filter(([_, data]) => data.nilai !== '') // Hanya kirim yang ada nilainya
-      .map(([siswaId, data]) => ({
-        siswaId,
-        nilai: data.nilai,
-        keterangan: data.keterangan,
-      }));
+    const payloadGrades = Object.entries(gradesInput).map(([siswaId, data]) => ({
+      siswaId,
+      harian1: data.harian1,
+      harian2: data.harian2,
+      harian3: data.harian3,
+      harian4: data.harian4,
+      harian5: data.harian5,
+      harian6: data.harian6,
+      uts: data.uts,
+      uas: data.uas,
+    }));
 
     try {
       const res = await fetch('/api/guru/nilai', {
@@ -146,7 +207,6 @@ export default function InputNilaiPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mataPelajaranId: sesi.mapelId,
-          jenis: selectedJenis,
           grades: payloadGrades,
         }),
       });
@@ -208,34 +268,19 @@ export default function InputNilaiPage() {
             Anda tidak terdaftar mengajar di kelas manapun.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kelas & Mata Pelajaran</label>
-              <select
-                value={selectedSesiIndex}
-                onChange={(e) => setSelectedSesiIndex(parseInt(e.target.value, 10))}
-                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-medium focus:outline-hidden focus:border-indigo-500 transition-colors"
-              >
-                {sesiList.map((s, idx) => (
-                  <option key={idx} value={idx}>
-                    {s.kelasNama} - {s.mapelNama} ({s.mapelKode})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori Penilaian</label>
-              <select
-                value={selectedJenis}
-                onChange={(e: any) => setSelectedJenis(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-medium focus:outline-hidden focus:border-indigo-500 transition-colors"
-              >
-                <option value="TUGAS">Tugas / Nilai Harian</option>
-                <option value="UTS">Ujian Tengah Semester (UTS)</option>
-                <option value="UAS">Ujian Akhir Semester (UAS)</option>
-              </select>
-            </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pilih Kelas & Mata Pelajaran Yang Diampu</label>
+            <select
+              value={selectedSesiIndex}
+              onChange={(e) => setSelectedSesiIndex(parseInt(e.target.value, 10))}
+              className="w-full px-3 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-xs font-medium focus:outline-hidden focus:border-indigo-500 transition-colors"
+            >
+              {sesiList.map((s, idx) => (
+                <option key={idx} value={idx}>
+                  {s.kelasNama} - {s.mapelNama} ({s.mapelKode})
+                </option>
+              ))}
+            </select>
           </div>
         )}
       </div>
@@ -262,47 +307,62 @@ export default function InputNilaiPage() {
             </div>
           ) : (
             <div className="flex-1 flex flex-col justify-between">
-              {/* Form Scrollable Area */}
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden overflow-y-auto max-h-[calc(100vh-360px)] pr-1">
-                <div className="divide-y divide-slate-850">
-                  {siswaNilaiRows.map((row) => (
-                    <div
-                      key={row.siswaId}
-                      className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-900/10 transition-colors"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-bold text-slate-350">{row.nisn}</h4>
-                        <p className="text-sm font-bold text-slate-100 truncate mt-0.5">{row.nama}</p>
-                      </div>
-
-                      <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
-                        {/* Input Nilai Angka */}
-                        <div className="w-20 shrink-0">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            placeholder="0-100"
-                            value={gradesInput[row.siswaId]?.nilai ?? ''}
-                            onChange={(e) => handleGradeChange(row.siswaId, 'nilai', e.target.value)}
-                            className="w-full text-center px-3 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 rounded-xl text-sm font-bold text-white placeholder-slate-800"
-                          />
-                        </div>
-
-                        {/* Input Keterangan Singkat */}
-                        <div className="flex-1 sm:w-48">
-                          <input
-                            type="text"
-                            placeholder="Keterangan / catatan..."
-                            value={gradesInput[row.siswaId]?.keterangan ?? ''}
-                            onChange={(e) => handleGradeChange(row.siswaId, 'keterangan', e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-white placeholder-slate-700"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              {/* Form Scrollable Area - Horizontal Grid Table */}
+              <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[700px]">
+                  <thead>
+                    <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                      <th className="p-3">Nama Siswa</th>
+                      <th className="p-3 text-center">Harian 1</th>
+                      <th className="p-3 text-center">Harian 2</th>
+                      <th className="p-3 text-center">Harian 3</th>
+                      <th className="p-3 text-center">Harian 4</th>
+                      <th className="p-3 text-center">Harian 5</th>
+                      <th className="p-3 text-center">Harian 6</th>
+                      <th className="p-3 text-center">UTS</th>
+                      <th className="p-3 text-center">UAS</th>
+                      <th className="p-3 text-right bg-indigo-950/10 text-indigo-400">Nilai Rapor</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-850">
+                    {siswaNilaiRows.map((row) => {
+                      const studentGrades = gradesInput[row.siswaId] || {
+                        harian1: '',
+                        harian2: '',
+                        harian3: '',
+                        harian4: '',
+                        harian5: '',
+                        harian6: '',
+                        uts: '',
+                        uas: '',
+                      };
+                      return (
+                        <tr key={row.siswaId} className="hover:bg-slate-900/10 transition-colors">
+                          <td className="p-3">
+                            <h4 className="text-[10px] font-bold text-slate-500">{row.nisn}</h4>
+                            <p className="text-xs font-bold text-slate-200 truncate">{row.nama}</p>
+                          </td>
+                          {['harian1', 'harian2', 'harian3', 'harian4', 'harian5', 'harian6', 'uts', 'uas'].map((field) => (
+                            <td key={field} className="p-2 text-center">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                placeholder="-"
+                                value={studentGrades[field as keyof typeof studentGrades] ?? ''}
+                                onChange={(e) => handleGradeChange(row.siswaId, field, e.target.value)}
+                                className="w-12 px-1 py-1.5 bg-slate-955 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 rounded-xl text-center text-xs font-bold text-white placeholder-slate-800 focus:outline-hidden"
+                              />
+                            </td>
+                          ))}
+                          <td className="p-3 text-right font-extrabold bg-indigo-950/5 text-indigo-350 text-xs">
+                            {row.rapor !== null ? row.rapor : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
 
               {/* Simpan Button Sticky */}

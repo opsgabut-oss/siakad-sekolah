@@ -31,10 +31,15 @@ interface RekapNilai {
   mapelId: string;
   namaMapel: string;
   kodeMapel: string;
-  tugas: number | string;
+  harian1: number | string;
+  harian2: number | string;
+  harian3: number | string;
+  harian4: number | string;
+  harian5: number | string;
+  harian6: number | string;
   uts: number | string;
   uas: number | string;
-  rataRata: number | string;
+  rapor: number | string;
 }
 
 const HARI_LIST = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'];
@@ -313,30 +318,40 @@ export default function SiswaDashboard() {
             ) : (
               <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
-                      <tr className="border-b border-slate-800 bg-slate-950/40">
-                        <th className="p-4.5 text-xs font-semibold uppercase tracking-wider text-slate-400">Mata Pelajaran</th>
-                        <th className="p-4.5 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">Tugas</th>
-                        <th className="p-4.5 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">UTS</th>
-                        <th className="p-4.5 text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">UAS</th>
-                        <th className="p-4.5 text-xs font-semibold uppercase tracking-wider text-slate-400 text-right bg-indigo-950/10 text-indigo-400">Rata-rata</th>
+                      <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                        <th className="p-3">Mata Pelajaran</th>
+                        <th className="p-3 text-center">H1</th>
+                        <th className="p-3 text-center">H2</th>
+                        <th className="p-3 text-center">H3</th>
+                        <th className="p-3 text-center">H4</th>
+                        <th className="p-3 text-center">H5</th>
+                        <th className="p-3 text-center">H6</th>
+                        <th className="p-3 text-center">UTS</th>
+                        <th className="p-3 text-center">UAS</th>
+                        <th className="p-3 text-right bg-indigo-950/10 text-indigo-400">Rapor</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-850">
                       {nilaiList.map((row) => (
                         <tr key={row.mapelId} className="hover:bg-slate-900/20 transition-colors">
-                          <td className="p-4.5">
+                          <td className="p-3">
                             <span className="text-[10px] font-extrabold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md mr-2">
                               {row.kodeMapel}
                             </span>
                             <span className="text-xs font-bold text-slate-200">{row.namaMapel}</span>
                           </td>
-                          <td className="p-4.5 text-xs font-bold text-center text-slate-350">{row.tugas}</td>
-                          <td className="p-4.5 text-xs font-bold text-center text-slate-350">{row.uts}</td>
-                          <td className="p-4.5 text-xs font-bold text-center text-slate-350">{row.uas}</td>
-                          <td className="p-4.5 text-xs font-extrabold text-right bg-indigo-950/5 text-indigo-350">
-                            {row.rataRata}
+                          <td className="p-3 text-xs font-bold text-center text-slate-350">{row.harian1}</td>
+                          <td className="p-3 text-xs font-bold text-center text-slate-350">{row.harian2}</td>
+                          <td className="p-3 text-xs font-bold text-center text-slate-350">{row.harian3}</td>
+                          <td className="p-3 text-xs font-bold text-center text-slate-350">{row.harian4}</td>
+                          <td className="p-3 text-xs font-bold text-center text-slate-350">{row.harian5}</td>
+                          <td className="p-3 text-xs font-bold text-center text-slate-350">{row.harian6}</td>
+                          <td className="p-3 text-xs font-bold text-center text-slate-350">{row.uts}</td>
+                          <td className="p-3 text-xs font-bold text-center text-slate-350">{row.uas}</td>
+                          <td className="p-3 text-xs font-extrabold text-right bg-indigo-950/5 text-indigo-350">
+                            {row.rapor}
                           </td>
                         </tr>
                       ))}

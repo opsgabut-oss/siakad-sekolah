@@ -18,7 +18,8 @@ export default function AdminProfilPage() {
   const [telepon, setTelepon] = useState('');
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
-  const [logoUrl, setLogoUrl] = useState('');
+  const [logoPemdaUrl, setLogoPemdaUrl] = useState('');
+  const [logoSekolahUrl, setLogoSekolahUrl] = useState('');
   const [namaKepsek, setNamaKepsek] = useState('');
   const [nipKepsek, setNipKepsek] = useState('');
   const [tahunAjaranAktif, setTahunAjaranAktif] = useState('');
@@ -43,7 +44,8 @@ export default function AdminProfilPage() {
       setTelepon(data.telepon || '');
       setEmail(data.email || '');
       setWebsite(data.website || '');
-      setLogoUrl(data.logoUrl || '');
+      setLogoPemdaUrl(data.logoPemdaUrl || '');
+      setLogoSekolahUrl(data.logoSekolahUrl || '');
       setNamaKepsek(data.namaKepsek || '');
       setNipKepsek(data.nipKepsek || '');
       setTahunAjaranAktif(data.tahunAjaranAktif || '');
@@ -79,7 +81,8 @@ export default function AdminProfilPage() {
           telepon,
           email,
           website,
-          logoUrl: logoUrl || null,
+          logoPemdaUrl: logoPemdaUrl || null,
+          logoSekolahUrl: logoSekolahUrl || null,
           namaKepsek,
           nipKepsek: nipKepsek || null,
           tahunAjaranAktif
@@ -256,25 +259,43 @@ export default function AdminProfilPage() {
             </div>
           </div>
 
-          {/* Logo URL */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-355 uppercase block">URL Logo Sekolah (Opsional)</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                <LinkIcon size={14} />
+          {/* Logo URLs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-355 uppercase block">URL Logo Pemda (Kiri Kop - Opsional)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                  <LinkIcon size={14} />
+                </div>
+                <input
+                  type="url"
+                  value={logoPemdaUrl}
+                  onChange={(e) => setLogoPemdaUrl(e.target.value)}
+                  placeholder="Masukkan link gambar logo Pemda..."
+                  className="w-full pl-9 pr-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                />
               </div>
-              <input
-                type="url"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="Masukkan link gambar logo (cth: dari Imgur, Postimg, atau cloud drive)..."
-                className="w-full pl-9 pr-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
-              />
             </div>
-            <p className="text-[10px] text-slate-500">
-              *Tautan URL ini akan dirender di sisi kiri Kop Surat Laporan BK & Surat Panggilan saat dicetak.
-            </p>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-355 uppercase block">URL Logo Sekolah (Kanan Kop - Opsional)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                  <LinkIcon size={14} />
+                </div>
+                <input
+                  type="url"
+                  value={logoSekolahUrl}
+                  onChange={(e) => setLogoSekolahUrl(e.target.value)}
+                  placeholder="Masukkan link gambar logo Sekolah..."
+                  className="w-full pl-9 pr-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                />
+              </div>
+            </div>
           </div>
+          <p className="text-[10px] text-slate-500">
+            *Tautan URL logo ini akan dirender secara otomatis pada Kop Surat Resmi (Logo Pemda di sebelah kiri, Logo Sekolah di sebelah kanan).
+          </p>
         </div>
 
         {/* Seksi 3: Kepala Sekolah (Penandatangan) */}

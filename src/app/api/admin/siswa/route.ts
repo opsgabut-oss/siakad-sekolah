@@ -4,7 +4,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 
 export async function GET() {
   const user = await getAuthenticatedUser();
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'GURU_BK' && user.role !== 'KEPALA_SEKOLAH')) {
     return NextResponse.json({ message: 'Tidak diizinkan' }, { status: 403 });
   }
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { nisn, nama, kelasId, kontakOrangTua } = await request.json();
+    const { nisn, nama, kelasId, kontakOrangTua, tanggalLahir } = await request.json();
 
     if (!nisn || nisn.length !== 10 || isNaN(Number(nisn))) {
       return NextResponse.json({ message: 'NISN harus 10 digit angka' }, { status: 400 });
@@ -54,7 +54,8 @@ export async function POST(request: Request) {
         nisn,
         nama,
         kelasId,
-        kontakOrangTua
+        kontakOrangTua,
+        tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null
       }
     });
 

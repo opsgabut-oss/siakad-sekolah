@@ -41,6 +41,8 @@ export default function LoginPage() {
         router.push('/admin/dashboard');
       } else if (role === 'GURU') {
         router.push('/guru/dashboard');
+      } else if (role === 'GURU_BK' || role === 'KEPALA_SEKOLAH') {
+        router.push('/bk/dashboard');
       } else if (role === 'SISWA' || role === 'ORANG_TUA') {
         router.push('/siswa/dashboard');
       } else {

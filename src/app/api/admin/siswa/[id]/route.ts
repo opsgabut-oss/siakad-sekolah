@@ -13,7 +13,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { nisn, nama, kelasId, kontakOrangTua } = await request.json();
+    const { nisn, nama, kelasId, kontakOrangTua, tanggalLahir } = await request.json();
 
     if (!nisn || nisn.length !== 10 || isNaN(Number(nisn))) {
       return NextResponse.json({ message: 'NISN harus 10 digit angka' }, { status: 400 });
@@ -36,11 +36,18 @@ export async function PUT(
 
     const updatedSiswa = await prisma.siswa.update({
       where: { id },
-      data: { nisn, nama, kelasId, kontakOrangTua }
+      data: { 
+        nisn, 
+        nama, 
+        kelasId, 
+        kontakOrangTua,
+        tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null
+      }
     });
 
     return NextResponse.json(updatedSiswa);
   } catch (error) {
+    console.error('Update student error:', error);
     return NextResponse.json({ message: 'Gagal memperbarui data siswa' }, { status: 500 });
   }
 }

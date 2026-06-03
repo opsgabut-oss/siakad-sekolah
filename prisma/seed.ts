@@ -22,6 +22,8 @@ async function main() {
   const passwordGuru = await bcrypt.hash('guru123', 10);
   const passwordSiswa = await bcrypt.hash('siswa123', 10);
   const passwordOrtu = await bcrypt.hash('ortu123', 10);
+  const passwordBK = await bcrypt.hash('bk123', 10);
+  const passwordKepsek = await bcrypt.hash('kepsek123', 10);
 
   // 1. Create Admin TU User
   const adminUser = await prisma.user.create({
@@ -33,6 +35,26 @@ async function main() {
   });
   console.log('Created Admin TU User:', adminUser.username);
 
+  // Create BK User
+  const bkUser = await prisma.user.create({
+    data: {
+      username: 'guru.bk',
+      password: passwordBK,
+      role: Role.GURU_BK,
+    },
+  });
+  console.log('Created BK User:', bkUser.username);
+
+  // Create Kepsek User
+  const kepsekUser = await prisma.user.create({
+    data: {
+      username: 'kepsek',
+      password: passwordKepsek,
+      role: Role.KEPALA_SEKOLAH,
+    },
+  });
+  console.log('Created Kepsek User:', kepsekUser.username);
+
   // 2. Create Tahun Ajaran
   const tahunAjaran = await prisma.tahunAjaran.create({
     data: {
@@ -42,22 +64,7 @@ async function main() {
   });
   console.log('Created Tahun Ajaran:', tahunAjaran.tahun);
 
-  // 3. Create Kelas
-  const kelasA = await prisma.kelas.create({
-    data: {
-      nama: 'Kelas X-A',
-      tahunAjaranId: tahunAjaran.id,
-    },
-  });
-  const kelasB = await prisma.kelas.create({
-    data: {
-      nama: 'Kelas X-B',
-      tahunAjaranId: tahunAjaran.id,
-    },
-  });
-  console.log('Created Classes:', kelasA.nama, ',', kelasB.nama);
-
-  // 4. Create Guru Users and Guru Profiles
+  // 3. Create Guru Users and Guru Profiles (Seeded first so we can assign Wali Kelas)
   const userGuru1 = await prisma.user.create({
     data: {
       username: 'guru.budi',
@@ -93,6 +100,27 @@ async function main() {
   });
   console.log('Created Guru profiles for:', guru1.nama, 'and', guru2.nama);
 
+  // 4. Create Kelas (Kelas 1 - 6)
+  const kelas1 = await prisma.kelas.create({
+    data: { nama: 'Kelas 1', tahunAjaranId: tahunAjaran.id },
+  });
+  const kelas2 = await prisma.kelas.create({
+    data: { nama: 'Kelas 2', tahunAjaranId: tahunAjaran.id },
+  });
+  const kelas3 = await prisma.kelas.create({
+    data: { nama: 'Kelas 3', tahunAjaranId: tahunAjaran.id },
+  });
+  const kelas4 = await prisma.kelas.create({
+    data: { nama: 'Kelas 4', tahunAjaranId: tahunAjaran.id },
+  });
+  const kelas5 = await prisma.kelas.create({
+    data: { nama: 'Kelas 5', tahunAjaranId: tahunAjaran.id, waliKelasId: guru2.id },
+  });
+  const kelas6 = await prisma.kelas.create({
+    data: { nama: 'Kelas 6', tahunAjaranId: tahunAjaran.id, waliKelasId: guru1.id },
+  });
+  console.log('Created SD Classes 1-6. Wali Kelas Kelas 6:', guru1.nama, ', Kelas 5:', guru2.nama);
+
   // 5. Create Siswa & Orang Tua Users
   const userSiswa1 = await prisma.user.create({
     data: {
@@ -112,10 +140,11 @@ async function main() {
     data: {
       nisn: '1234567890',
       nama: 'Rian Hidayat',
-      kelasId: kelasA.id,
+      kelasId: kelas6.id,
       kontakOrangTua: '085222333444',
       userId: userSiswa1.id,
       orangTuaUserId: userOrtu1.id,
+      tanggalLahir: new Date('2014-05-15'), // Usia ~12 tahun
     },
   });
 
@@ -137,10 +166,11 @@ async function main() {
     data: {
       nisn: '0987654321',
       nama: 'Laras Ati',
-      kelasId: kelasA.id,
+      kelasId: kelas6.id,
       kontakOrangTua: '081333444555',
       userId: userSiswa2.id,
       orangTuaUserId: userOrtu2.id,
+      tanggalLahir: new Date('2014-09-20'), // Usia ~11.5 tahun
     },
   });
 
@@ -162,10 +192,11 @@ async function main() {
     data: {
       nisn: '1122334455',
       nama: 'Dian Permana',
-      kelasId: kelasB.id,
+      kelasId: kelas5.id,
       kontakOrangTua: '087888999000',
       userId: userSiswa3.id,
       orangTuaUserId: userOrtu3.id,
+      tanggalLahir: new Date('2015-02-10'), // Usia ~11 tahun
     },
   });
   console.log('Created Siswa & Orang Tua profiles for:', siswa1.nama, ',', siswa2.nama, ',', siswa3.nama);
@@ -185,11 +216,11 @@ async function main() {
   });
   console.log('Created Mata Pelajaran:', mapelMTK.nama, ',', mapelIND.nama, ',', mapelING.nama, ',', mapelFIS.nama);
 
-  // 7. Create Jadwal Pelajaran (Kelas X-A)
+  // 7. Create Jadwal Pelajaran (Kelas 6)
   await prisma.jadwalPelajaran.createMany({
     data: [
       {
-        kelasId: kelasA.id,
+        kelasId: kelas6.id,
         mataPelajaranId: mapelMTK.id,
         guruId: guru1.id,
         hari: Hari.SENIN,
@@ -197,7 +228,7 @@ async function main() {
         jamSelesai: '09:00',
       },
       {
-        kelasId: kelasA.id,
+        kelasId: kelas6.id,
         mataPelajaranId: mapelIND.id,
         guruId: guru2.id,
         hari: Hari.SENIN,
@@ -205,7 +236,7 @@ async function main() {
         jamSelesai: '10:30',
       },
       {
-        kelasId: kelasA.id,
+        kelasId: kelas6.id,
         mataPelajaranId: mapelFIS.id,
         guruId: guru1.id,
         hari: Hari.SELASA,
@@ -213,7 +244,7 @@ async function main() {
         jamSelesai: '09:00',
       },
       {
-        kelasId: kelasA.id,
+        kelasId: kelas6.id,
         mataPelajaranId: mapelING.id,
         guruId: guru2.id,
         hari: Hari.RABU,
@@ -222,7 +253,7 @@ async function main() {
       },
     ],
   });
-  console.log('Created Jadwal Pelajaran for Kelas X-A');
+  console.log('Created Jadwal Pelajaran for Kelas 6');
 
   // 8. Create Nilai Rapor (Rian Hidayat)
   await prisma.nilai.createMany({

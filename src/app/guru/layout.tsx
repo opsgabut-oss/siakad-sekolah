@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import Link from 'next/link';
-import { School, LogOut, Calendar, GraduationCap } from 'lucide-react';
+import { School, LogOut, Calendar, GraduationCap, BookOpen } from 'lucide-react';
 import LogoutButton from '../admin/LogoutButton'; // Guna kembali tombol logout yang aman
 
 export default async function GuruLayout({
@@ -74,6 +74,13 @@ export default async function GuruLayout({
           >
             <GraduationCap size={18} />
             Input Nilai
+          </Link>
+          <Link
+            href="/guru/jurnal"
+            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-400 select-none transition-colors"
+          >
+            <BookOpen size={18} />
+            Jurnal Harian
           </Link>
           <MiniLogoutButton />
         </div>

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import Link from 'next/link';
-import { Users, GraduationCap, LayoutDashboard, LogOut, ShieldAlert, BookOpen, Calendar, FileSpreadsheet } from 'lucide-react';
+import { Users, GraduationCap, LayoutDashboard, LogOut, ShieldAlert, BookOpen, Calendar, FileSpreadsheet, School, FolderOpen, Settings } from 'lucide-react';
 
 export default async function AdminLayout({
   children,
@@ -55,6 +55,13 @@ export default async function AdminLayout({
               Dashboard
             </Link>
             <Link
+              href="/admin/kelas"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <School size={18} />
+              Data Kelas
+            </Link>
+            <Link
               href="/admin/guru"
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
             >
@@ -88,6 +95,20 @@ export default async function AdminLayout({
             >
               <FileSpreadsheet size={18} />
               Laporan Absensi
+            </Link>
+            <Link
+              href="/admin/surat"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <FolderOpen size={18} />
+              Arsip Surat
+            </Link>
+            <Link
+              href="/admin/profil"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <Settings size={18} />
+              Identitas Sekolah
             </Link>
           </nav>
         </div>

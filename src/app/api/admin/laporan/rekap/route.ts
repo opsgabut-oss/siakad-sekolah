@@ -4,7 +4,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 
 export async function GET(request: Request) {
   const user = await getAuthenticatedUser();
-  if (!user || (user.role !== 'ADMIN' && user.role !== 'GURU')) {
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'GURU' && user.role !== 'GURU_BK' && user.role !== 'KEPALA_SEKOLAH')) {
     return NextResponse.json({ message: 'Tidak diizinkan' }, { status: 403 });
   }
 

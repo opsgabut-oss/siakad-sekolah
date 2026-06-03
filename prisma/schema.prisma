@@ -10,6 +10,8 @@ generator client {
 enum Role {
   ADMIN
   GURU
+  GURU_BK
+  KEPALA_SEKOLAH
   SISWA
   ORANG_TUA
 }
@@ -64,6 +66,12 @@ model Kelas {
   tahunAjaran   TahunAjaran       @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
   siswa         Siswa[]
   jadwal        JadwalPelajaran[]
+  
+  // Wali Kelas Relation
+  waliKelasId   String?           @unique
+  waliKelas     Guru?             @relation(fields: [waliKelasId], references: [id], name: "WaliKelas", onDelete: SetNull)
+  
+  jurnalHarian  JurnalHarian[]
 }
 
 model Guru {
@@ -75,6 +83,9 @@ model Guru {
   user     User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   absensi  Absensi[]
   jadwal   JadwalPelajaran[]
+  
+  kelasWali Kelas?           @relation("WaliKelas")
+  jurnalHarian JurnalHarian[]
 }
 
 model Siswa {
@@ -84,6 +95,7 @@ model Siswa {
   kelasId        String
   kelas          Kelas     @relation(fields: [kelasId], references: [id], onDelete: Cascade)
   kontakOrangTua String
+  tanggalLahir   DateTime? @db.Date
   
   userId         String?   @unique
   user           User?     @relation(fields: [userId], references: [id], name: "SiswaUser", onDelete: SetNull)
@@ -93,6 +105,8 @@ model Siswa {
   
   absensi        Absensi[]
   nilai          Nilai[]
+  pelanggaran    PelanggaranSiswa[]
+  catatanBK      CatatanBK[]
 }
 
 model Absensi {
@@ -110,11 +124,12 @@ model Absensi {
 }
 
 model MataPelajaran {
-  id     String            @id @default(uuid())
-  nama   String            // e.g. "Matematika"
-  kode   String            @unique // e.g. "MTK"
-  jadwal JadwalPelajaran[]
-  nilai  Nilai[]
+  id           String            @id @default(uuid())
+  nama         String            // e.g. "Matematika"
+  kode         String            @unique // e.g. "MTK"
+  jadwal       JadwalPelajaran[]
+  nilai        Nilai[]
+  jurnalHarian JurnalHarian[]
 }
 
 model JadwalPelajaran {
@@ -141,5 +156,83 @@ model Nilai {
   keterangan      String?       // e.g. "Tugas 1 Aljabar"
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+}
+
+model PelanggaranSiswa {
+  id              String   @id @default(uuid())
+  siswaId         String
+  siswa           Siswa    @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  tanggal         DateTime @db.Date
+  namaPelanggaran String
+  poin            Int
+  keterangan      String   // AES-256 encrypted description
+  dilaporkanOleh  String   // plain text name or role of reporter
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CatatanBK {
+  id           String   @id @default(uuid())
+  siswaId      String
+  siswa        Siswa    @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  tanggal      DateTime @db.Date
+  kategori     String   // e.g. Bimbingan Pribadi, Bimbingan Belajar
+  permasalahan String   // AES-256 encrypted permasalahan
+  tindakan     String   // AES-256 encrypted tindakan / solusi
+  status       String   // e.g. Selesai, Tindak Lanjut
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model JurnalHarian {
+  id              String        @id @default(uuid())
+  tanggal         DateTime      @db.Date
+  kelasId         String
+  kelas           Kelas         @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  guruId          String
+  guru            Guru          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  materi          String
+  catatan         String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum JenisSurat {
+  MASUK
+  KELUAR
+}
+
+model ArsipSurat {
+  id              String      @id @default(uuid())
+  nomorSurat      String      @unique
+  tanggalSurat    DateTime    @db.Date
+  tanggalDiterima DateTime?   @db.Date
+  pengirim        String
+  penerima        String
+  perihal         String
+  jenis           JenisSurat
+  tautanBerkas    String?
+  keterangan      String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model ProfilSekolah {
+  id            String   @id @default("single-profile")
+  pemerintah    String   @default("Pemerintah Kabupaten Pati")
+  dinas         String   @default("Dinas Pendidikan dan Kebudayaan")
+  namaSekolah   String   @default("SD Negeri Wedusan")
+  npsn          String?  @default("20338123")
+  alamat        String   @default("Jl. Puncel - Ngablak KM. 05 Desa Wedusan, Kec. Dukuhseti, Kab. Pati (59158)")
+  telepon       String?  @default("081234567890")
+  email         String?  @default("sdnwedusan@gmail.com")
+  website       String?  @default("www.sdnwedusan.sch.id")
+  logoUrl       String?  
+  namaKepsek    String   @default("Sudarto, S.Pd")
+  nipKepsek     String?  @default("197408122005011002")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 

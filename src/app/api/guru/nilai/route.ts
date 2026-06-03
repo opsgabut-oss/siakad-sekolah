@@ -5,7 +5,7 @@ import { JenisNilai } from '@prisma/client';
 
 export async function GET(request: Request) {
   const user = await getAuthenticatedUser();
-  if (!user || user.role !== 'GURU') {
+  if (!user || (user.role !== 'GURU' && user.role !== 'KEPALA_SEKOLAH')) {
     return NextResponse.json({ message: 'Tidak diizinkan' }, { status: 403 });
   }
 

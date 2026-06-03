@@ -27,19 +27,29 @@ export function middleware(request: NextRequest) {
 
     // 2. Proteksi rute Admin TU
     if (pathname.startsWith('/admin') && role !== 'ADMIN') {
-      const target = role === 'GURU' ? '/guru/dashboard' : (role === 'SISWA' || role === 'ORANG_TUA' ? '/siswa/dashboard' : '/login');
+      const target = role === 'GURU' ? '/guru/dashboard' : (role === 'GURU_BK' || role === 'KEPALA_SEKOLAH' ? '/bk/dashboard' : (role === 'SISWA' || role === 'ORANG_TUA' ? '/siswa/dashboard' : '/login'));
       return NextResponse.redirect(new URL(target, request.url));
     }
 
     // 3. Proteksi rute Guru
     if (pathname.startsWith('/guru') && role !== 'GURU') {
-      const target = role === 'ADMIN' ? '/admin/dashboard' : (role === 'SISWA' || role === 'ORANG_TUA' ? '/siswa/dashboard' : '/login');
+      const target = role === 'ADMIN' ? '/admin/dashboard' : (role === 'GURU_BK' || role === 'KEPALA_SEKOLAH' ? '/bk/dashboard' : (role === 'SISWA' || role === 'ORANG_TUA' ? '/siswa/dashboard' : '/login'));
       return NextResponse.redirect(new URL(target, request.url));
     }
 
     // 4. Proteksi rute Siswa & Orang Tua
     if (pathname.startsWith('/siswa') && role !== 'SISWA' && role !== 'ORANG_TUA') {
-      const target = role === 'ADMIN' ? '/admin/dashboard' : (role === 'GURU' ? '/guru/dashboard' : '/login');
+      const target = role === 'ADMIN' ? '/admin/dashboard' : (role === 'GURU' ? '/guru/dashboard' : (role === 'GURU_BK' || role === 'KEPALA_SEKOLAH' ? '/bk/dashboard' : '/login'));
+      return NextResponse.redirect(new URL(target, request.url));
+    }
+
+    // 4b. Proteksi rute BK & Kepala Sekolah (Kedisiplinan & Konseling)
+    if (pathname.startsWith('/bk') && role !== 'GURU_BK' && role !== 'KEPALA_SEKOLAH') {
+      const target = role === 'ADMIN' 
+        ? '/admin/dashboard' 
+        : role === 'GURU' 
+          ? '/guru/dashboard' 
+          : '/siswa/dashboard';
       return NextResponse.redirect(new URL(target, request.url));
     }
 
@@ -49,7 +59,7 @@ export function middleware(request: NextRequest) {
         ? '/admin/dashboard' 
         : role === 'GURU' 
           ? '/guru/dashboard' 
-          : '/siswa/dashboard';
+          : (role === 'GURU_BK' || role === 'KEPALA_SEKOLAH' ? '/bk/dashboard' : '/siswa/dashboard');
       return NextResponse.redirect(new URL(target, request.url));
     }
   } catch (error) {
@@ -63,5 +73,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/login', '/admin/:path*', '/guru/:path*', '/siswa/:path*'],
+  matcher: ['/', '/login', '/admin/:path*', '/guru/:path*', '/siswa/:path*', '/bk/:path*'],
 };

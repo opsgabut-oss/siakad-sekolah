@@ -12,6 +12,7 @@ interface Siswa {
     nama: string;
   };
   kontakOrangTua: string;
+  tanggalLahir: string | null;
 }
 
 interface Kelas {
@@ -36,6 +37,7 @@ export default function AdminSiswaPage() {
   const [nama, setNama] = useState('');
   const [kelasId, setKelasId] = useState('');
   const [kontakOrangTua, setKontakOrangTua] = useState('');
+  const [tanggalLahir, setTanggalLahir] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -80,12 +82,26 @@ export default function AdminSiswaPage() {
     }
   };
 
+  const calculateAge = (birthDateStr: string | null) => {
+    if (!birthDateStr) return '-';
+    const birthDate = new Date(birthDateStr);
+    const today = new Date();
+    let ageYears = today.getFullYear() - birthDate.getFullYear();
+    let ageMonths = today.getMonth() - birthDate.getMonth();
+    if (ageMonths < 0 || (ageMonths === 0 && today.getDate() < birthDate.getDate())) {
+      ageYears--;
+      ageMonths = 12 + ageMonths;
+    }
+    return `${ageYears} Thn ${ageMonths} Bln`;
+  };
+
   const handleOpenAdd = () => {
     setEditingId(null);
     setNisn('');
     setNama('');
     setKelasId(kelasList[0]?.id || '');
     setKontakOrangTua('');
+    setTanggalLahir('');
     setFormError('');
     setIsOpen(true);
   };
@@ -96,6 +112,7 @@ export default function AdminSiswaPage() {
     setNama(siswa.nama);
     setKelasId(siswa.kelasId);
     setKontakOrangTua(siswa.kontakOrangTua);
+    setTanggalLahir(siswa.tanggalLahir ? new Date(siswa.tanggalLahir).toISOString().split('T')[0] : '');
     setFormError('');
     setIsOpen(true);
   };
@@ -149,7 +166,7 @@ export default function AdminSiswaPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nisn, nama, kelasId, kontakOrangTua }),
+        body: JSON.stringify({ nisn, nama, kelasId, kontakOrangTua, tanggalLahir: tanggalLahir || null }),
       });
 
       const data = await res.json();
@@ -309,6 +326,7 @@ export default function AdminSiswaPage() {
                   <th className="px-6 py-4">Nama Siswa</th>
                   <th className="px-6 py-4">NISN (10 Digit)</th>
                   <th className="px-6 py-4">Kelas</th>
+                  <th className="px-6 py-4">Tanggal Lahir / Usia</th>
                   <th className="px-6 py-4">Kontak Orang Tua</th>
                   <th className="px-6 py-4 text-right">Aksi</th>
                 </tr>
@@ -322,6 +340,20 @@ export default function AdminSiswaPage() {
                       <span className="bg-slate-950/50 border border-slate-800 text-indigo-400 px-2.5 py-1 rounded-full text-xs font-medium">
                         {siswa.kelas.nama}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 space-y-0.5">
+                      {siswa.tanggalLahir ? (
+                        <>
+                          <p className="text-xs text-slate-300">
+                            {new Date(siswa.tanggalLahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </p>
+                          <p className="text-[10px] text-indigo-400 font-bold uppercase">
+                            Usia: {calculateAge(siswa.tanggalLahir)}
+                          </p>
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-500 italic">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">{siswa.kontakOrangTua}</td>
                     <td className="px-6 py-4 text-right">
@@ -403,6 +435,19 @@ export default function AdminSiswaPage() {
                     className="w-full pl-9 pr-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
                   />
                 </div>
+              </div>
+
+              {/* Tanggal Lahir */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-300 uppercase block">
+                  Tanggal Lahir Siswa
+                </label>
+                <input
+                  type="date"
+                  value={tanggalLahir}
+                  onChange={(e) => setTanggalLahir(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                />
               </div>
 
               {/* Kelas */}

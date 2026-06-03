@@ -70,55 +70,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Jenis nilai tidak valid' }, { status: 400 });
     }
 
-    // Jalankan upsert menggunakan transaksi
-    const result = await prisma.$transaction(
-      grades.map((g: any) => {
-        const { siswaId, nilai, keterangan } = g;
-        
-        // Cek apakah nilai untuk siswa, mapel, dan jenis tersebut sudah ada
-        // Kita gunakan query untuk find dan conditional update/create secara sekuensial
-        return async (tx: any) => {
-          const existing = await tx.nilai.findFirst({
-            where: {
-              siswaId,
-              mataPelajaranId,
-              jenis,
-            },
-          });
-
-          const parsedNilai = parseInt(nilai, 10);
-          if (isNaN(parsedNilai) || parsedNilai < 0 || parsedNilai > 100) {
-            throw new Error(`Nilai untuk siswa harus berupa angka 0-100`);
-          }
-
-          if (existing) {
-            return tx.nilai.update({
-              where: { id: existing.id },
-              data: {
-                nilai: parsedNilai,
-                keterangan: keterangan || null,
-              },
-            });
-          } else {
-            return tx.nilai.create({
-              data: {
-                siswaId,
-                mataPelajaranId,
-                jenis,
-                nilai: parsedNilai,
-                keterangan: keterangan || null,
-              },
-            });
-          }
-        };
-      })
-    );
-
-    // Jalankan fungsinya (Prisma mendukung array of async functions di $transaction untuk library versi tertentu,
-    // tapi cara paling aman dan universal adalah menggunakan sekuensial loop atau Promise.all dengan prisma client biasa
-    // jika transaksi di atas terkendala tipe data. Mari kita gunakan sequential loop dalam standard transaction untuk keamanan ORM).
-    
-    // Namun untuk memastikan kompatibilitas transaksi, mari kita tulis loop biasa dengan Transaction:
+    // Jalankan upsert menggunakan transaksi interaktif (sequential loop) untuk keamanan dan kompatibilitas ORM:
     const finalResult = await prisma.$transaction(async (tx) => {
       const records = [];
       for (const g of grades) {

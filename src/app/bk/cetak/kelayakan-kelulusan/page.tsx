@@ -235,7 +235,7 @@ export default async function KelayakanKelulusanPrintPage({ searchParams }: Page
           <p>Guru BK / Wali Kelas</p>
           <div className="h-16" />
           <p className="font-bold underline">Budi Santoso, S.Pd.</p>
-          <p className="text-[10px] text-slate-500">NUPTK. 1234567890123456</p>
+          <p className="text-[10px] text-slate-500">NIP. 198503152010011002</p>
         </div>
       </div>
 

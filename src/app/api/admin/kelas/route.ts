@@ -12,7 +12,7 @@ export async function GET() {
     const kelas = await prisma.kelas.findMany({
       include: {
         waliKelas: {
-          select: { id: true, nama: true, nuptk: true }
+          select: { id: true, nama: true, nip: true }
         },
         tahunAjaran: {
           select: { tahun: true, aktif: true }
@@ -62,7 +62,7 @@ export async function PUT(request: Request) {
       data: { waliKelasId: waliKelasId || null },
       include: {
         waliKelas: {
-          select: { id: true, nama: true, nuptk: true }
+          select: { id: true, nama: true, nip: true }
         },
         tahunAjaran: true
       }

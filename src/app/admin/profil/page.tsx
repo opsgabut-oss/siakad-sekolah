@@ -297,7 +297,7 @@ export default function AdminProfilPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-355 uppercase block">NIP / NUPTK Kepala Sekolah</label>
+              <label className="text-xs font-semibold text-slate-355 uppercase block">NIP Kepala Sekolah</label>
               <input
                 type="text"
                 value={nipKepsek}

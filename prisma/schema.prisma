@@ -76,7 +76,7 @@ model Kelas {
 
 model Guru {
   id       String            @id @default(uuid())
-  nuptk    String            @unique // 16 digit
+  nip      String            @unique // 18 digit
   nama     String
   kontak   String
   userId   String?           @unique

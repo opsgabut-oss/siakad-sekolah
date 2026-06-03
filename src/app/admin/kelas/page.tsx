@@ -6,7 +6,7 @@ import { School, UserPlus, X, Loader2, Award, User, RefreshCw, AlertCircle } fro
 interface Guru {
   id: string;
   nama: string;
-  nuptk: string;
+  nip: string;
 }
 
 interface Kelas {
@@ -175,7 +175,7 @@ export default function AdminKelasPage() {
                 {kelas.waliKelas ? (
                   <div>
                     <h4 className="font-bold text-sm text-slate-100">{kelas.waliKelas.nama}</h4>
-                    <p className="text-[10px] font-mono text-slate-500 mt-0.5">NUPTK: {kelas.waliKelas.nuptk}</p>
+                    <p className="text-[10px] font-mono text-slate-500 mt-0.5">NIP: {kelas.waliKelas.nip}</p>
                   </div>
                 ) : (
                   <p className="text-xs text-slate-500 italic">Belum ada Wali Kelas ditugaskan</p>
@@ -243,7 +243,7 @@ export default function AdminKelasPage() {
                     <option value="">-- Tanpa Wali Kelas / Lepaskan Jabatan --</option>
                     {guruList.map(g => (
                       <option key={g.id} value={g.id}>
-                        {g.nama} (NUPTK: {g.nuptk})
+                        {g.nama} (NIP: {g.nip})
                       </option>
                     ))}
                   </select>

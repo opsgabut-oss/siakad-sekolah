@@ -46,7 +46,7 @@ export async function getAuthenticatedUser() {
           select: {
             id: true,
             nama: true,
-            nuptk: true,
+            nip: true,
           },
         },
         siswa: {

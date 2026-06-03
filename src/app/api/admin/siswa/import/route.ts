@@ -121,7 +121,7 @@ export async function POST(request: Request) {
           // 1. Buat User Siswa
           const studentUser = await tx.user.create({
             data: {
-              username: `siswa.${nisn}`,
+              username: nisn,
               password: studentPasswordHash,
               role: 'SISWA'
             }

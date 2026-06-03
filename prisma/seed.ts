@@ -67,7 +67,7 @@ async function main() {
   // 3. Create Guru Users and Guru Profiles (Seeded first so we can assign Wali Kelas)
   const userGuru1 = await prisma.user.create({
     data: {
-      username: 'guru.budi',
+      username: '198503152010011002',
       password: passwordGuru,
       role: Role.GURU,
     },
@@ -75,7 +75,7 @@ async function main() {
 
   const guru1 = await prisma.guru.create({
     data: {
-      nuptk: '1234567890123456',
+      nip: '198503152010011002',
       nama: 'Budi Santoso, S.Pd.',
       kontak: '081234567890',
       userId: userGuru1.id,
@@ -84,7 +84,7 @@ async function main() {
 
   const userGuru2 = await prisma.user.create({
     data: {
-      username: 'guru.siti',
+      username: '198907242015022003',
       password: passwordGuru,
       role: Role.GURU,
     },
@@ -92,7 +92,7 @@ async function main() {
 
   const guru2 = await prisma.guru.create({
     data: {
-      nuptk: '9876543210987654',
+      nip: '198907242015022003',
       nama: 'Siti Aminah, M.Pd.',
       kontak: '089876543210',
       userId: userGuru2.id,
@@ -124,14 +124,14 @@ async function main() {
   // 5. Create Siswa & Orang Tua Users
   const userSiswa1 = await prisma.user.create({
     data: {
-      username: 'siswa.rian',
+      username: '1234567890',
       password: passwordSiswa,
       role: Role.SISWA,
     },
   });
   const userOrtu1 = await prisma.user.create({
     data: {
-      username: 'ortu.rian',
+      username: 'ortu.1234567890',
       password: passwordOrtu,
       role: Role.ORANG_TUA,
     },
@@ -150,14 +150,14 @@ async function main() {
 
   const userSiswa2 = await prisma.user.create({
     data: {
-      username: 'siswa.laras',
+      username: '0987654321',
       password: passwordSiswa,
       role: Role.SISWA,
     },
   });
   const userOrtu2 = await prisma.user.create({
     data: {
-      username: 'ortu.laras',
+      username: 'ortu.0987654321',
       password: passwordOrtu,
       role: Role.ORANG_TUA,
     },
@@ -176,14 +176,14 @@ async function main() {
 
   const userSiswa3 = await prisma.user.create({
     data: {
-      username: 'siswa.dian',
+      username: '1122334455',
       password: passwordSiswa,
       role: Role.SISWA,
     },
   });
   const userOrtu3 = await prisma.user.create({
     data: {
-      username: 'ortu.dian',
+      username: 'ortu.1122334455',
       password: passwordOrtu,
       role: Role.ORANG_TUA,
     },

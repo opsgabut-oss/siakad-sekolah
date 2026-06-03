@@ -38,7 +38,7 @@ export default async function GuruLayout({
               {user.guru?.nama || user.username}
             </p>
             <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider">
-              NUPTK: {user.guru?.nuptk || '-'}
+              NIP: {user.guru?.nip || '-'}
             </p>
           </div>
         </div>

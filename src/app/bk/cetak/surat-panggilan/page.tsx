@@ -155,7 +155,7 @@ export default async function SuratPanggilanPrintPage({ searchParams }: PageProp
           <p>Guru BK / Wali Kelas</p>
           <div className="h-20" />
           <p className="font-bold underline">Budi Santoso, S.Pd.</p>
-          <p className="text-xs text-slate-500">NUPTK. 1234567890123456</p>
+          <p className="text-xs text-slate-500">NIP. 198503152010011002</p>
         </div>
       </div>
 

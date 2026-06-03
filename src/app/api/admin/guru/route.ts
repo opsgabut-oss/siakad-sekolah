@@ -32,38 +32,27 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { nuptk, nama, kontak } = await request.json();
+    const { nip, nama, kontak } = await request.json();
 
-    if (!nuptk || nuptk.length !== 16 || isNaN(Number(nuptk))) {
-      return NextResponse.json({ message: 'NUPTK harus 16 digit angka' }, { status: 400 });
+    if (!nip || nip.length !== 18 || isNaN(Number(nip))) {
+      return NextResponse.json({ message: 'NIP harus 18 digit angka' }, { status: 400 });
     }
 
     if (!nama || !kontak) {
       return NextResponse.json({ message: 'Nama dan kontak wajib diisi' }, { status: 400 });
     }
 
-    // Cek apakah NUPTK sudah ada
+    // Cek apakah NIP sudah ada
     const existingGuru = await prisma.guru.findUnique({
-      where: { nuptk }
+      where: { nip }
     });
 
     if (existingGuru) {
-      return NextResponse.json({ message: 'Guru dengan NUPTK ini sudah terdaftar' }, { status: 400 });
+      return NextResponse.json({ message: 'Guru dengan NIP ini sudah terdaftar' }, { status: 400 });
     }
 
-    // Generate username berdasarkan nama depan
-    const namePart = nama.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-    const baseUsername = `guru.${namePart}`;
-    
-    let username = baseUsername;
-    let counter = 1;
-    let userExists = await prisma.user.findUnique({ where: { username } });
-    
-    while (userExists) {
-      username = `${baseUsername}${counter}`;
-      userExists = await prisma.user.findUnique({ where: { username } });
-      counter++;
-    }
+    // Username otomatis menggunakan NIP murni
+    const username = nip;
 
     // Hash password default 'guru123'
     const hashedPassword = await bcrypt.hash('guru123', 10);
@@ -79,7 +68,7 @@ export async function POST(request: Request) {
 
       const newGuru = await tx.guru.create({
         data: {
-          nuptk,
+          nip,
           nama,
           kontak,
           userId: newUser.id

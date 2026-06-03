@@ -135,6 +135,13 @@ export async function PUT(request: Request) {
           where: { id: ta.id },
           data: { aktif: true }
         });
+
+        // Pindahkan semua kelas ke Tahun Ajaran yang baru aktif ini
+        await tx.kelas.updateMany({
+          data: {
+            tahunAjaranId: ta.id
+          }
+        });
       }
 
       return profil;

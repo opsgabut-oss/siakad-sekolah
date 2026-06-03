@@ -5,7 +5,7 @@ import { Plus, Edit2, Trash2, Search, X, Loader2, User, Phone, Check } from 'luc
 
 interface Guru {
   id: string;
-  nuptk: string;
+  nip: string;
   nama: string;
   kontak: string;
   user: {
@@ -24,7 +24,7 @@ export default function AdminGuruPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   
   // Form State
-  const [nuptk, setNuptk] = useState('');
+  const [nip, setNip] = useState('');
   const [nama, setNama] = useState('');
   const [kontak, setKontak] = useState('');
   const [formError, setFormError] = useState('');
@@ -50,7 +50,7 @@ export default function AdminGuruPage() {
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setNuptk('');
+    setNip('');
     setNama('');
     setKontak('');
     setFormError('');
@@ -59,7 +59,7 @@ export default function AdminGuruPage() {
 
   const handleOpenEdit = (guru: Guru) => {
     setEditingId(guru.id);
-    setNuptk(guru.nuptk);
+    setNip(guru.nip);
     setNama(guru.nama);
     setKontak(guru.kontak);
     setFormError('');
@@ -73,13 +73,13 @@ export default function AdminGuruPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nuptk || !nama || !kontak) {
+    if (!nip || !nama || !kontak) {
       setFormError('Semua kolom wajib diisi');
       return;
     }
 
-    if (nuptk.length !== 16 || isNaN(Number(nuptk))) {
-      setFormError('NUPTK harus tepat 16 digit angka');
+    if (nip.length !== 18 || isNaN(Number(nip))) {
+      setFormError('NIP harus tepat 18 digit angka');
       return;
     }
 
@@ -93,7 +93,7 @@ export default function AdminGuruPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nuptk, nama, kontak }),
+        body: JSON.stringify({ nip, nama, kontak }),
       });
 
       const data = await res.json();
@@ -133,7 +133,7 @@ export default function AdminGuruPage() {
   // Filter Search
   const filteredGuru = guruList.filter(g =>
     g.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    g.nuptk.includes(searchTerm) ||
+    g.nip.includes(searchTerm) ||
     (g.user?.username.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
@@ -162,7 +162,7 @@ export default function AdminGuruPage() {
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Cari guru berdasarkan nama, NUPTK, atau username..."
+          placeholder="Cari guru berdasarkan nama, NIP, atau username..."
           className="bg-transparent border-0 text-white placeholder-slate-500 text-sm focus:outline-hidden w-full"
         />
         {searchTerm && (
@@ -195,7 +195,7 @@ export default function AdminGuruPage() {
               <thead>
                 <tr className="border-b border-slate-800/80 bg-slate-950/20 text-slate-400 text-xs font-semibold uppercase tracking-wider">
                   <th className="px-6 py-4">Nama Lengkap</th>
-                  <th className="px-6 py-4">NUPTK (16 Digit)</th>
+                  <th className="px-6 py-4">NIP (18 Digit)</th>
                   <th className="px-6 py-4">Kontak HP</th>
                   <th className="px-6 py-4">Username Akun</th>
                   <th className="px-6 py-4 text-right">Aksi</th>
@@ -205,7 +205,7 @@ export default function AdminGuruPage() {
                 {filteredGuru.map((guru) => (
                   <tr key={guru.id} className="hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 font-semibold text-slate-100">{guru.nama}</td>
-                    <td className="px-6 py-4 font-mono text-slate-400">{guru.nuptk}</td>
+                    <td className="px-6 py-4 font-mono text-slate-400">{guru.nip}</td>
                     <td className="px-6 py-4">{guru.kontak}</td>
                     <td className="px-6 py-4">
                       {guru.user ? (
@@ -266,18 +266,18 @@ export default function AdminGuruPage() {
                 </div>
               )}
 
-              {/* NUPTK */}
+              {/* NIP */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-300 uppercase block">
-                  NUPTK (16 Digit)
+                  NIP (18 Digit)
                 </label>
                 <input
                   type="text"
-                  maxLength={16}
-                  value={nuptk}
-                  onChange={(e) => setNuptk(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="Masukkan 16 digit NUPTK..."
-                  className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
+                  maxLength={18}
+                  value={nip}
+                  onChange={(e) => setNip(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="Masukkan 18 digit NIP..."
+                  className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
                 />
               </div>
 
@@ -322,7 +322,7 @@ export default function AdminGuruPage() {
               {!editingId && (
                 <div className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-xl">
                   <p className="text-[10px] text-indigo-400 font-medium leading-relaxed">
-                    💡 <strong>Informasi Akun:</strong> Akun guru akan dibuat otomatis. Username didasarkan pada nama guru, dan password default disetel sebagai <strong>guru123</strong>.
+                    💡 <strong>Informasi Akun:</strong> Akun guru akan dibuat otomatis. Username menggunakan NIP murni, dan password default disetel sebagai <strong>guru123</strong>.
                   </p>
                 </div>
               )}

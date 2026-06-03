@@ -96,7 +96,7 @@ export default async function AdminDashboardPage() {
           </h2>
           <p className="text-slate-400 text-sm max-w-2xl leading-relaxed">
             Pada fase ini, Guru dapat melakukan absensi secara mobile-friendly dari perangkat smartphone mereka. 
-            Pastikan data Guru memiliki NUPTK yang valid dan Siswa memiliki NISN yang terhubung ke kelas aktif agar 
+            Pastikan data Guru memiliki NIP yang valid dan Siswa memiliki NISN yang terhubung ke kelas aktif agar 
             dapat diabsen hari ini.
           </p>
         </div>

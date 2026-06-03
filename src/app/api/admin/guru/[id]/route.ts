@@ -13,10 +13,10 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { nuptk, nama, kontak } = await request.json();
+    const { nip, nama, kontak } = await request.json();
 
-    if (!nuptk || nuptk.length !== 16 || isNaN(Number(nuptk))) {
-      return NextResponse.json({ message: 'NUPTK harus 16 digit angka' }, { status: 400 });
+    if (!nip || nip.length !== 18 || isNaN(Number(nip))) {
+      return NextResponse.json({ message: 'NIP harus 18 digit angka' }, { status: 400 });
     }
 
     if (!nama || !kontak) {
@@ -25,18 +25,18 @@ export async function PUT(
 
     const existingGuru = await prisma.guru.findFirst({
       where: {
-        nuptk,
+        nip,
         NOT: { id }
       }
     });
 
     if (existingGuru) {
-      return NextResponse.json({ message: 'NUPTK sudah digunakan oleh guru lain' }, { status: 400 });
+      return NextResponse.json({ message: 'NIP sudah digunakan oleh guru lain' }, { status: 400 });
     }
 
     const updatedGuru = await prisma.guru.update({
       where: { id },
-      data: { nuptk, nama, kontak }
+      data: { nip, nama, kontak }
     });
 
     return NextResponse.json(updatedGuru);

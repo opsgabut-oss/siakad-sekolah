@@ -12,6 +12,9 @@ interface Guru {
   user: {
     username: string;
   } | null;
+  noAbsen: number | null;
+  pangkat: string | null;
+  golongan: string | null;
 }
 
 export default function AdminGuruPage() {
@@ -29,6 +32,9 @@ export default function AdminGuruPage() {
   const [nik, setNik] = useState('');
   const [nama, setNama] = useState('');
   const [kontak, setKontak] = useState('');
+  const [noAbsen, setNoAbsen] = useState('');
+  const [pangkat, setPangkat] = useState('');
+  const [golongan, setGolongan] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,6 +62,9 @@ export default function AdminGuruPage() {
     setNik('');
     setNama('');
     setKontak('');
+    setNoAbsen('');
+    setPangkat('');
+    setGolongan('');
     setFormError('');
     setIsOpen(true);
   };
@@ -66,6 +75,9 @@ export default function AdminGuruPage() {
     setNik(guru.nik || '');
     setNama(guru.nama);
     setKontak(guru.kontak);
+    setNoAbsen(guru.noAbsen !== null && guru.noAbsen !== undefined ? guru.noAbsen.toString() : '');
+    setPangkat(guru.pangkat || '');
+    setGolongan(guru.golongan || '');
     setFormError('');
     setIsOpen(true);
   };
@@ -111,7 +123,10 @@ export default function AdminGuruPage() {
           nip: nip || null, 
           nik: nik || null, 
           nama, 
-          kontak 
+          kontak,
+          noAbsen: noAbsen || null,
+          pangkat: pangkat || null,
+          golongan: golongan || null
         }),
       });
 
@@ -214,8 +229,10 @@ export default function AdminGuruPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-800/80 bg-slate-950/20 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                  <th className="px-4 py-4 text-center w-16">No. Urut</th>
                   <th className="px-6 py-4">Nama Lengkap</th>
                   <th className="px-6 py-4">Identitas (NIP / NIK)</th>
+                  <th className="px-6 py-4">Pangkat / Golongan</th>
                   <th className="px-6 py-4">Kontak HP</th>
                   <th className="px-6 py-4">Username Akun</th>
                   <th className="px-6 py-4 text-right">Aksi</th>
@@ -224,9 +241,21 @@ export default function AdminGuruPage() {
               <tbody className="divide-y divide-slate-800/50 text-slate-300 text-sm">
                 {filteredGuru.map((guru) => (
                   <tr key={guru.id} className="hover:bg-slate-800/20 transition-colors">
+                    <td className="px-4 py-4 text-center font-bold font-mono text-indigo-400">
+                      {guru.noAbsen !== null && guru.noAbsen !== undefined ? guru.noAbsen : '-'}
+                    </td>
                     <td className="px-6 py-4 font-semibold text-slate-100">{guru.nama}</td>
                     <td className="px-6 py-4 font-mono text-slate-400">
                       {guru.nip ? `${guru.nip} (NIP)` : guru.nik ? `${guru.nik} (NIK)` : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-slate-300">
+                      {guru.pangkat || guru.golongan ? (
+                        <span>
+                          {guru.pangkat || '-'} {guru.golongan ? `(${guru.golongan})` : ''}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500 italic">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">{guru.kontak}</td>
                     <td className="px-6 py-4">
@@ -288,6 +317,20 @@ export default function AdminGuruPage() {
                 </div>
               )}
 
+              {/* No Urut / Absen */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-300 uppercase block">
+                  No. Urut Absensi (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={noAbsen}
+                  onChange={(e) => setNoAbsen(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="Masukkan nomor urut guru (contoh: 1)..."
+                  className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
+                />
+              </div>
+
               {/* NIP */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-300 uppercase block">
@@ -315,6 +358,34 @@ export default function AdminGuruPage() {
                   onChange={(e) => setNik(e.target.value.replace(/[^0-9]/g, ''))}
                   placeholder="Masukkan NIK KTP..."
                   className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Pangkat */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-300 uppercase block">
+                  Pangkat (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={pangkat}
+                  onChange={(e) => setPangkat(e.target.value)}
+                  placeholder="Contoh: Pembina, Penata, Pembina Utama Muda..."
+                  className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Golongan */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-300 uppercase block">
+                  Golongan (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={golongan}
+                  onChange={(e) => setGolongan(e.target.value)}
+                  placeholder="Contoh: IV/a, III/b, III/c..."
+                  className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
                 />
               </div>
 

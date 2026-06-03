@@ -13,7 +13,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { nip, nik, nama, kontak } = await request.json();
+    const { nip, nik, nama, kontak, noAbsen, pangkat, golongan } = await request.json();
 
     if (!nip && !nik) {
       return NextResponse.json({ message: 'NIP atau NIK wajib diisi' }, { status: 400 });
@@ -61,7 +61,10 @@ export async function PUT(
         nip: nip || null, 
         nik: nik || null, 
         nama, 
-        kontak 
+        kontak,
+        noAbsen: noAbsen ? parseInt(noAbsen, 10) : null,
+        pangkat: pangkat || null,
+        golongan: golongan || null
       }
     });
 

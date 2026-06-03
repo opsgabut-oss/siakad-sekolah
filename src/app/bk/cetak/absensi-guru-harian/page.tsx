@@ -27,7 +27,10 @@ export default async function DailyTeacherAttendancePrintPage({ searchParams }: 
 
   // Ambil data guru
   const gurus = await prisma.guru.findMany({
-    orderBy: { nama: 'asc' }
+    orderBy: [
+      { noAbsen: 'asc' },
+      { nama: 'asc' }
+    ]
   });
 
   // Ambil absensi hari tersebut
@@ -51,6 +54,8 @@ export default async function DailyTeacherAttendancePrintPage({ searchParams }: 
       nama: guru.nama,
       nip: guru.nip || '-',
       nik: guru.nik || '-',
+      pangkat: guru.pangkat || '-',
+      golongan: guru.golongan || '-',
       status: record?.status || 'ALPA',
       waktuDatang: record?.waktuDatang ? new Date(record.waktuDatang) : null,
       waktuPulang: record?.waktuPulang ? new Date(record.waktuPulang) : null,
@@ -147,6 +152,7 @@ export default async function DailyTeacherAttendancePrintPage({ searchParams }: 
             <th className="p-2 border-r border-black text-center w-8">No</th>
             <th className="p-2 border-r border-black w-48">Nama Guru / Staf</th>
             <th className="p-2 border-r border-black w-32">NIP/NIK</th>
+            <th className="p-2 border-r border-black w-36">Pangkat / Golongan</th>
             <th className="p-2 border-r border-black text-center w-16">Status</th>
             <th className="p-2 border-r border-black text-center w-16">Datang</th>
             <th className="p-2 border-r border-black text-center w-28">Tanda Tangan Datang</th>
@@ -161,6 +167,15 @@ export default async function DailyTeacherAttendancePrintPage({ searchParams }: 
               <td className="p-2 border-r border-black text-center">{row.no}</td>
               <td className="p-2 border-r border-black font-semibold">{row.nama}</td>
               <td className="p-2 border-r border-black font-mono text-[9px]">{row.nip !== '-' ? row.nip : row.nik}</td>
+              <td className="p-2 border-r border-black">
+                {row.pangkat !== '-' || row.golongan !== '-' ? (
+                  <span>
+                    {row.pangkat !== '-' ? row.pangkat : '-'} {row.golongan !== '-' ? `(${row.golongan})` : ''}
+                  </span>
+                ) : (
+                  <span className="text-slate-400 italic">-</span>
+                )}
+              </td>
               <td className="p-2 border-r border-black text-center font-bold">
                 <span className={
                   row.status === 'HADIR' ? 'text-emerald-700' :

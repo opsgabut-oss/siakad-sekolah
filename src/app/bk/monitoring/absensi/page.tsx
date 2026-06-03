@@ -415,6 +415,7 @@ export default function BKMonitoringAbsensiPage() {
                     <th className="p-4 text-xs font-semibold uppercase">No</th>
                     <th className="p-4 text-xs font-semibold uppercase">Nama</th>
                     <th className="p-4 text-xs font-semibold uppercase">NIP/NIK</th>
+                    <th className="p-4 text-xs font-semibold uppercase">Pangkat / Golongan</th>
                     <th className="p-4 text-xs font-semibold uppercase text-center">Hadir</th>
                     <th className="p-4 text-xs font-semibold uppercase text-center">Izin</th>
                     <th className="p-4 text-xs font-semibold uppercase text-center">Sakit</th>
@@ -430,6 +431,15 @@ export default function BKMonitoringAbsensiPage() {
                       <td className="p-4 text-sm">{index + 1}</td>
                       <td className="p-4 text-sm font-bold">{row.nama}</td>
                       <td className="p-4 text-sm">{row.nip !== '-' ? row.nip : row.nik}</td>
+                      <td className="p-4 text-sm text-slate-300">
+                        {row.pangkat !== '-' || row.golongan !== '-' ? (
+                          <span>
+                            {row.pangkat !== '-' ? row.pangkat : '-'} {row.golongan !== '-' ? `(${row.golongan})` : ''}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 italic">-</span>
+                        )}
+                      </td>
                       <td className="p-4 text-center font-bold text-emerald-400">{row.hadir}</td>
                       <td className="p-4 text-center font-bold text-sky-400">{row.izin}</td>
                       <td className="p-4 text-center font-bold text-amber-400">{row.sakit}</td>

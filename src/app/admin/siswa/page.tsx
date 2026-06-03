@@ -14,6 +14,7 @@ interface Siswa {
   };
   kontakOrangTua: string;
   tanggalLahir: string | null;
+  noAbsen: number | null;
 }
 
 interface Kelas {
@@ -39,6 +40,7 @@ export default function AdminSiswaPage() {
   const [kelasId, setKelasId] = useState('');
   const [kontakOrangTua, setKontakOrangTua] = useState('');
   const [tanggalLahir, setTanggalLahir] = useState('');
+  const [noAbsen, setNoAbsen] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -54,7 +56,7 @@ export default function AdminSiswaPage() {
   const [importing, setImporting] = useState(false);
 
   const handleDownloadTemplate = () => {
-    const csvContent = "\uFEFFnisn;nama;kelas;kontak orang tua\n1122334455;Dian Permana;Kelas 5;081234567890\n";
+    const csvContent = "\uFEFFnisn;nama;kelas;kontak orang tua;no_absen\n1122334455;Dian Permana;Kelas 5;081234567890;1\n";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -115,6 +117,7 @@ export default function AdminSiswaPage() {
     setKelasId(kelasList[0]?.id || '');
     setKontakOrangTua('');
     setTanggalLahir('');
+    setNoAbsen('');
     setFormError('');
     setIsOpen(true);
   };
@@ -126,6 +129,7 @@ export default function AdminSiswaPage() {
     setKelasId(siswa.kelasId);
     setKontakOrangTua(siswa.kontakOrangTua);
     setTanggalLahir(siswa.tanggalLahir ? new Date(siswa.tanggalLahir).toISOString().split('T')[0] : '');
+    setNoAbsen(siswa.noAbsen !== null && siswa.noAbsen !== undefined ? siswa.noAbsen.toString() : '');
     setFormError('');
     setIsOpen(true);
   };
@@ -179,7 +183,14 @@ export default function AdminSiswaPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nisn, nama, kelasId, kontakOrangTua, tanggalLahir: tanggalLahir || null }),
+        body: JSON.stringify({ 
+          nisn, 
+          nama, 
+          kelasId, 
+          kontakOrangTua, 
+          tanggalLahir: tanggalLahir || null, 
+          noAbsen: noAbsen || null 
+        }),
       });
 
       const data = await res.json();
@@ -277,7 +288,7 @@ export default function AdminSiswaPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Manajemen Data Siswa</h1>
-          <p className="text-slate-400 mt-1 text-sm">Kelola data siswa dan import data massal lewat file CSV.</p>
+          <p className="text-slate-400 mt-1 text-sm">Kelola data siswa, nomor absen manual, dan impor data massal lewat file CSV.</p>
         </div>
         <div className="flex gap-3 flex-wrap">
           <button
@@ -352,6 +363,7 @@ export default function AdminSiswaPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-800/80 bg-slate-950/20 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                  <th className="px-4 py-4 text-center w-16">Absen</th>
                   <th className="px-6 py-4">Nama Siswa</th>
                   <th className="px-6 py-4">NISN (10 Digit)</th>
                   <th className="px-6 py-4">Kelas</th>
@@ -363,6 +375,9 @@ export default function AdminSiswaPage() {
               <tbody className="divide-y divide-slate-800/50 text-slate-300 text-sm">
                 {filteredSiswa.map((siswa) => (
                   <tr key={siswa.id} className="hover:bg-slate-800/20 transition-colors">
+                    <td className="px-4 py-4 text-center font-bold font-mono text-indigo-400">
+                      {siswa.noAbsen !== null && siswa.noAbsen !== undefined ? siswa.noAbsen : '-'}
+                    </td>
                     <td className="px-6 py-4 font-semibold text-slate-100">{siswa.nama}</td>
                     <td className="px-6 py-4 font-mono text-slate-400">{siswa.nisn}</td>
                     <td className="px-6 py-4">
@@ -432,19 +447,36 @@ export default function AdminSiswaPage() {
                 </div>
               )}
 
-              {/* NISN */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase block">
-                  NISN (10 Digit)
-                </label>
-                <input
-                  type="text"
-                  maxLength={10}
-                  value={nisn}
-                  onChange={(e) => setNisn(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="Masukkan 10 digit NISN..."
-                  className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
-                />
+              <div className="grid grid-cols-3 gap-3">
+                {/* No Absen */}
+                <div className="col-span-1 space-y-2">
+                  <label className="text-xs font-semibold text-slate-300 uppercase block">
+                    No. Absen
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={noAbsen}
+                    onChange={(e) => setNoAbsen(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="1, 2..."
+                    className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-650 text-sm focus:outline-hidden focus:border-indigo-500 font-mono font-bold"
+                  />
+                </div>
+
+                {/* NISN */}
+                <div className="col-span-2 space-y-2">
+                  <label className="text-xs font-semibold text-slate-300 uppercase block">
+                    NISN (10 Digit)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={nisn}
+                    onChange={(e) => setNisn(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="10 digit NISN..."
+                    className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500 font-mono"
+                  />
+                </div>
               </div>
 
               {/* Nama */}
@@ -564,7 +596,7 @@ export default function AdminSiswaPage() {
                 </h4>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Gunakan format CSV dengan koma (`,`) atau titik-koma (`;`) sebagai pembatas kolom. Header baris pertama wajib berisi kolom:
-                  <code className="mx-1 px-1 bg-slate-900 text-indigo-300 font-mono text-[10px] border border-slate-800 rounded">nisn, nama, kelas, kontak orang tua</code>
+                  <code className="mx-1 px-1 bg-slate-900 text-indigo-300 font-mono text-[10px] border border-slate-800 rounded">nisn, nama, kelas, kontak orang tua, no_absen</code>
                 </p>
                 <div className="mt-1 flex gap-2">
                   <button
@@ -576,7 +608,7 @@ export default function AdminSiswaPage() {
                   </button>
                 </div>
                 <pre className="p-2.5 bg-slate-950 border border-slate-900 rounded-lg text-[10px] font-mono text-emerald-400 overflow-x-auto select-all">
-                  {"nisn;nama;kelas;kontak orang tua\n1234567890;Rian Hidayat;Kelas 6;085222333444\n0987654321;Laras Ati;Kelas 6;081333444555"}
+                  {"nisn;nama;kelas;kontak orang tua;no_absen\n1234567890;Rian Hidayat;Kelas 6;085222333444;1\n0987654321;Laras Ati;Kelas 6;081333444555;2"}
                 </pre>
               </div>
 

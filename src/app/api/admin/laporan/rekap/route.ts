@@ -19,7 +19,10 @@ export async function GET(request: Request) {
 
     const siswaList = await prisma.siswa.findMany({
       where: { kelasId },
-      orderBy: { nama: 'asc' },
+      orderBy: [
+        { noAbsen: 'asc' },
+        { nama: 'asc' }
+      ],
     });
 
     const absensiWhereClause: any = {

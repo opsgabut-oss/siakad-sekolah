@@ -37,7 +37,10 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
 
   const siswaList = await prisma.siswa.findMany({
     where: { kelasId },
-    orderBy: { nama: 'asc' },
+    orderBy: [
+      { noAbsen: 'asc' },
+      { nama: 'asc' }
+    ],
   });
 
   // Fetch School Profile

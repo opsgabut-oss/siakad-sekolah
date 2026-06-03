@@ -195,7 +195,7 @@ export default async function MonthlyTeacherAttendancePrintPage({ searchParams }
         <div className="space-y-1">
           <p>Nama Lengkap: <strong>{guru.nama}</strong></p>
           <p>NIP/NIK: <strong>{guru.nip || guru.nik || '-'}</strong></p>
-          <p>Jabatan: <strong>Guru / Staf Pendidik</strong></p>
+          <p>Pangkat/Golongan: <strong>{guru.pangkat || '-'} {guru.golongan ? `(${guru.golongan})` : ''}</strong></p>
         </div>
         <div className="space-y-1 text-right">
           <p>Periode Bulan: <strong>{namaBulan}</strong></p>

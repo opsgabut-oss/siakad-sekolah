@@ -29,7 +29,10 @@ export async function GET(request: Request) {
     // Ambil daftar siswa
     const siswaList = await prisma.siswa.findMany({
       where: { kelasId },
-      orderBy: { nama: 'asc' },
+      orderBy: [
+        { noAbsen: 'asc' },
+        { nama: 'asc' }
+      ],
     });
 
     const bulan = searchParams.get('bulan');

@@ -17,7 +17,10 @@ export async function GET() {
           select: { username: true }
         }
       },
-      orderBy: { nama: 'asc' }
+      orderBy: [
+        { noAbsen: 'asc' },
+        { nama: 'asc' }
+      ]
     });
     return NextResponse.json(guru);
   } catch (error) {
@@ -32,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { nip, nik, nama, kontak } = await request.json();
+    const { nip, nik, nama, kontak, noAbsen, pangkat, golongan } = await request.json();
 
     if (!nip && !nik) {
       return NextResponse.json({ message: 'NIP atau NIK wajib diisi' }, { status: 400 });
@@ -91,7 +94,10 @@ export async function POST(request: Request) {
           nik: nik || null,
           nama,
           kontak,
-          userId: newUser.id
+          userId: newUser.id,
+          noAbsen: noAbsen ? parseInt(noAbsen, 10) : null,
+          pangkat: pangkat || null,
+          golongan: golongan || null
         }
       });
 

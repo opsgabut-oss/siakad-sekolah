@@ -16,7 +16,10 @@ export async function GET() {
           select: { nama: true }
         }
       },
-      orderBy: { nama: 'asc' }
+      orderBy: [
+        { noAbsen: 'asc' },
+        { nama: 'asc' }
+      ]
     });
     return NextResponse.json(siswa);
   } catch (error) {
@@ -31,7 +34,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { nisn, nama, kelasId, kontakOrangTua, tanggalLahir } = await request.json();
+    const { nisn, nama, kelasId, kontakOrangTua, tanggalLahir, noAbsen } = await request.json();
 
     if (!nisn || nisn.length !== 10 || isNaN(Number(nisn))) {
       return NextResponse.json({ message: 'NISN harus 10 digit angka' }, { status: 400 });
@@ -82,7 +85,8 @@ export async function POST(request: Request) {
           kontakOrangTua,
           tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null,
           userId: studentUser.id,
-          orangTuaUserId: parentUser.id
+          orangTuaUserId: parentUser.id,
+          noAbsen: noAbsen ? parseInt(noAbsen, 10) : null
         }
       });
 

@@ -30,7 +30,10 @@ export async function GET(request: Request) {
 
     // Ambil semua guru
     const gurus = await prisma.guru.findMany({
-      orderBy: { nama: 'asc' }
+      orderBy: [
+        { noAbsen: 'asc' },
+        { nama: 'asc' }
+      ]
     });
 
     // Ambil semua absensi guru pada range bulan ini
@@ -67,6 +70,8 @@ export async function GET(request: Request) {
         nama: g.nama,
         nip: g.nip || '-',
         nik: g.nik || '-',
+        pangkat: g.pangkat || '-',
+        golongan: g.golongan || '-',
         hadir,
         izin,
         sakit,

@@ -31,7 +31,10 @@ export async function GET(request: Request) {
     // 1. Ambil semua siswa di kelas ini
     const siswaList = await prisma.siswa.findMany({
       where: { kelasId },
-      orderBy: { nama: 'asc' }
+      orderBy: [
+        { noAbsen: 'asc' },
+        { nama: 'asc' }
+      ]
     });
 
     // 2. Ambil log absensi pada tanggal tersebut

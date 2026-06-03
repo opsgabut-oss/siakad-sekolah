@@ -39,6 +39,11 @@ export async function POST(request: Request) {
     let kontakIdx = headers.indexOf('kontak orang tua');
     if (kontakIdx === -1) kontakIdx = headers.indexOf('kontak');
 
+    // Deteksi index no_absen (opsional)
+    let noAbsenIdx = headers.indexOf('no absen');
+    if (noAbsenIdx === -1) noAbsenIdx = headers.indexOf('no_absen');
+    if (noAbsenIdx === -1) noAbsenIdx = headers.indexOf('absen');
+
     if (nisnIdx === -1 || namaIdx === -1 || kelasIdx === -1 || kontakIdx === -1) {
       return NextResponse.json({ 
         message: 'Format header salah. Pastikan terdapat kolom: nisn, nama, kelas, kontak orang tua' 
@@ -78,6 +83,9 @@ export async function POST(request: Request) {
       const nama = cells[namaIdx];
       const kelasNama = cells[kelasIdx];
       const kontak = cells[kontakIdx];
+
+      const noAbsenRaw = noAbsenIdx !== -1 ? cells[noAbsenIdx] : '';
+      const noAbsen = noAbsenRaw && !isNaN(Number(noAbsenRaw)) ? parseInt(noAbsenRaw, 10) : null;
 
       if (!nisn || !nama || !kelasNama || !kontak) {
         errors.push(`Baris ${i + 1}: Data tidak lengkap.`);
@@ -144,7 +152,8 @@ export async function POST(request: Request) {
               kelasId,
               kontakOrangTua: kontak,
               userId: studentUser.id,
-              orangTuaUserId: parentUser.id
+              orangTuaUserId: parentUser.id,
+              noAbsen: noAbsen
             }
           });
         });

@@ -20,7 +20,10 @@ export async function GET(request: Request) {
     // Ambil daftar siswa di kelas tersebut
     const siswaList = await prisma.siswa.findMany({
       where: { kelasId },
-      orderBy: { nama: 'asc' },
+      orderBy: [
+        { noAbsen: 'asc' },
+        { nama: 'asc' }
+      ],
     });
 
     // Ambil semua nilai di kelas tersebut untuk mapel tersebut

@@ -13,7 +13,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { nisn, nama, kelasId, kontakOrangTua, tanggalLahir } = await request.json();
+    const { nisn, nama, kelasId, kontakOrangTua, tanggalLahir, noAbsen } = await request.json();
 
     if (!nisn || nisn.length !== 10 || isNaN(Number(nisn))) {
       return NextResponse.json({ message: 'NISN harus 10 digit angka' }, { status: 400 });
@@ -41,7 +41,8 @@ export async function PUT(
         nama, 
         kelasId, 
         kontakOrangTua,
-        tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null
+        tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null,
+        noAbsen: noAbsen ? parseInt(noAbsen, 10) : null
       }
     });
 

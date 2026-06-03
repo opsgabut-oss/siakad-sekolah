@@ -76,6 +76,9 @@ export default function BKMonitoringAbsensiPage() {
     totalGuru: 0,
   });
   const [tanggalCetak, setTanggalCetak] = useState('');
+  const [selectedTanggalGuru, setSelectedTanggalGuru] = useState(() => {
+    return new Intl.DateTimeFormat('sv', { timeZone: 'Asia/Jakarta' }).format(new Date());
+  });
 
   useEffect(() => {
     fetchKelas();
@@ -278,8 +281,11 @@ export default function BKMonitoringAbsensiPage() {
           )}
           {activeTab === 'guru' && guruLaporanRows.length > 0 && (
             <>
+              <a href={`/bk/cetak/absensi-guru-harian?tanggal=${selectedTanggalGuru}`} target="_blank" className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-violet-500 to-indigo-600 text-white rounded-xl font-semibold text-xs shadow-lg transition-all">
+                <Printer size={14} /> Cetak Absen Harian
+              </a>
               <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs transition-all">
-                <Printer size={14} /> Cetak Laporan
+                <Printer size={14} /> Cetak Rekap Layar
               </button>
               <button onClick={handleExportGuruCSV} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs transition-all">
                 <Download size={14} /> Ekspor CSV
@@ -377,10 +383,16 @@ export default function BKMonitoringAbsensiPage() {
 
       {activeTab === 'guru' && (
         <div className="space-y-6">
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
-            <div className="w-full sm:w-auto flex items-center gap-3">
-              <label className="text-sm font-semibold text-slate-300">Pilih Bulan:</label>
-              <input type="month" value={guruBulan} onChange={(e) => setGuruBulan(e.target.value)} className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm" />
+          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 no-print">
+            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <label className="text-sm font-semibold text-slate-300">Pilih Bulan Rekap:</label>
+                <input type="month" value={guruBulan} onChange={(e) => setGuruBulan(e.target.value)} className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm" />
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <label className="text-sm font-semibold text-slate-300">Tanggal Cetak Harian:</label>
+                <input type="date" value={selectedTanggalGuru} onChange={(e) => setSelectedTanggalGuru(e.target.value)} className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm" />
+              </div>
             </div>
           </div>
           {guruLaporanRows.length > 0 && (
@@ -409,6 +421,7 @@ export default function BKMonitoringAbsensiPage() {
                     <th className="p-4 text-xs font-semibold uppercase text-center">Alpa</th>
                     <th className="p-4 text-xs font-semibold uppercase text-center">Total</th>
                     <th className="p-4 text-xs font-semibold uppercase text-right">Persentase</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center no-print">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -423,6 +436,15 @@ export default function BKMonitoringAbsensiPage() {
                       <td className="p-4 text-center font-bold text-rose-400">{row.alpa}</td>
                       <td className="p-4 text-center font-medium">{row.total}</td>
                       <td className="p-4 text-right font-extrabold text-violet-400">{row.persentase}%</td>
+                      <td className="p-4 text-center no-print">
+                        <a 
+                          href={`/bk/cetak/absensi-guru-bulanan?guruId=${row.guruId}&bulan=${guruBulan}`} 
+                          target="_blank" 
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all"
+                        >
+                          <Printer size={12} /> Cetak Kartu
+                        </a>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

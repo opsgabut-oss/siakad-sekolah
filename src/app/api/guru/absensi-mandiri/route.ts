@@ -10,8 +10,8 @@ export async function GET() {
   }
 
   try {
-    const now = new Date();
-    const todayStr = now.toLocaleDateString('sv'); // Format YYYY-MM-DD
+    // Gunakan zona waktu Asia/Jakarta untuk mencocokkan tanggal hari ini
+    const todayStr = new Intl.DateTimeFormat('sv', { timeZone: 'Asia/Jakarta' }).format(new Date());
     const todayDate = new Date(todayStr);
 
     // Cek absensi hari ini
@@ -23,6 +23,7 @@ export async function GET() {
     });
 
     // Ambil riwayat absensi bulan ini
+    const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
     const startDate = new Date(year, month, 1);
@@ -39,9 +40,15 @@ export async function GET() {
       orderBy: { tanggal: 'desc' }
     });
 
+    const guru = await prisma.guru.findUnique({
+      where: { id: user.guru.id },
+      select: { tandaTangan: true }
+    });
+
     return NextResponse.json({
       today: absensiToday,
-      history
+      history,
+      hasTandaTangan: !!guru?.tandaTangan
     });
   } catch (error) {
     console.error('Fetch absensi mandiri error:', error);
@@ -56,34 +63,108 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { status, keterangan } = await request.json();
+    const { status, tipe, keterangan } = await request.json();
 
     if (!status || !Object.values(StatusAbsensi).includes(status)) {
       return NextResponse.json({ message: 'Status absensi tidak valid' }, { status: 400 });
     }
 
-    const now = new Date();
-    const todayStr = now.toLocaleDateString('sv'); // Format YYYY-MM-DD
+    // Gunakan zona waktu Asia/Jakarta untuk tanggal hari ini
+    const todayStr = new Intl.DateTimeFormat('sv', { timeZone: 'Asia/Jakarta' }).format(new Date());
     const todayDate = new Date(todayStr);
 
-    const record = await prisma.absensiGuru.upsert({
-      where: {
-        guruId_tanggal: {
-          guruId: user.guru.id,
-          tanggal: todayDate
-        }
-      },
-      update: {
-        status,
-        keterangan: keterangan || null
-      },
-      create: {
-        guruId: user.guru.id,
-        tanggal: todayDate,
-        status,
-        keterangan: keterangan || null
-      }
+    // Ambil tanda tangan dari data Guru
+    const guru = await prisma.guru.findUnique({
+      where: { id: user.guru.id },
+      select: { tandaTangan: true }
     });
+
+    // Jika guru memilih status HADIR, wajib mengunggah tanda tangan terlebih dahulu
+    if (status === 'HADIR' && (!guru || !guru.tandaTangan)) {
+      return NextResponse.json({ 
+        message: 'Anda belum memiliki scan tanda tangan di profil. Silakan unggah tanda tangan Anda terlebih dahulu.' 
+      }, { status: 400 });
+    }
+
+    const now = new Date();
+
+    let record;
+
+    if (status === 'HADIR') {
+      if (tipe === 'PULANG') {
+        // Absen Pulang
+        record = await prisma.absensiGuru.upsert({
+          where: {
+            guruId_tanggal: {
+              guruId: user.guru.id,
+              tanggal: todayDate
+            }
+          },
+          update: {
+            status: 'HADIR',
+            waktuPulang: now,
+            ttdPulang: guru?.tandaTangan || null
+          },
+          create: {
+            guruId: user.guru.id,
+            tanggal: todayDate,
+            status: 'HADIR',
+            waktuPulang: now,
+            ttdPulang: guru?.tandaTangan || null
+          }
+        });
+      } else {
+        // Absen Datang (Default)
+        record = await prisma.absensiGuru.upsert({
+          where: {
+            guruId_tanggal: {
+              guruId: user.guru.id,
+              tanggal: todayDate
+            }
+          },
+          update: {
+            status: 'HADIR',
+            waktuDatang: now,
+            ttdDatang: guru?.tandaTangan || null
+          },
+          create: {
+            guruId: user.guru.id,
+            tanggal: todayDate,
+            status: 'HADIR',
+            waktuDatang: now,
+            ttdDatang: guru?.tandaTangan || null
+          }
+        });
+      }
+    } else {
+      // Sakit / Izin / Alpa - kosongkan waktu datang & pulang serta tanda tangan
+      record = await prisma.absensiGuru.upsert({
+        where: {
+          guruId_tanggal: {
+            guruId: user.guru.id,
+            tanggal: todayDate
+          }
+        },
+        update: {
+          status,
+          keterangan: keterangan || null,
+          waktuDatang: null,
+          waktuPulang: null,
+          ttdDatang: null,
+          ttdPulang: null
+        },
+        create: {
+          guruId: user.guru.id,
+          tanggal: todayDate,
+          status,
+          keterangan: keterangan || null,
+          waktuDatang: null,
+          waktuPulang: null,
+          ttdDatang: null,
+          ttdPulang: null
+        }
+      });
+    }
 
     return NextResponse.json({
       message: 'Absensi mandiri berhasil disimpan',

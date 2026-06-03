@@ -83,17 +83,22 @@ model Guru {
   
   kelasWali Kelas?           @relation("WaliKelas")
   jurnalHarian JurnalHarian[]
+  tandaTangan  String?          // Scan tanda tangan guru (Base64)
 }
 
 model AbsensiGuru {
-  id         String        @id @default(uuid())
-  guruId     String
-  guru       Guru          @relation(fields: [guruId], references: [id], onDelete: Cascade)
-  tanggal    DateTime      @db.Date
-  status     StatusAbsensi // HADIR, IZIN, SAKIT, ALPA
-  keterangan String?       // e.g. "Sakit Flu", "Izin Acara Keluarga"
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id          String        @id @default(uuid())
+  guruId      String
+  guru        Guru          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  tanggal     DateTime      @db.Date
+  status      StatusAbsensi // HADIR, IZIN, SAKIT, ALPA
+  keterangan  String?       // e.g. "Sakit Flu", "Izin Acara Keluarga"
+  waktuDatang DateTime?     // Jam datang (real-time)
+  waktuPulang DateTime?     // Jam pulang (real-time)
+  ttdDatang   String?       // Tanda tangan datang (Base64)
+  ttdPulang   String?       // Tanda tangan pulang (Base64)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@unique([guruId, tanggal])
 }

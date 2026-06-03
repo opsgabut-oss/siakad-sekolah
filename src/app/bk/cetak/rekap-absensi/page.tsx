@@ -87,8 +87,12 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
   const namaBulan = startDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   const tanggalLaporan = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
+  // Hitung jumlah hari dalam bulan tersebut
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const dayNumbers = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
   return (
-    <div className="min-h-screen bg-white text-black p-8 md:p-12 max-w-4xl mx-auto font-sans relative">
+    <div className="min-h-screen bg-white text-black p-4 md:p-8 w-full font-sans relative">
       {/* Tombol Cetak Manual */}
       <div 
         className="absolute top-4 right-4 print:hidden flex gap-2"
@@ -112,13 +116,13 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
           }
         }
         @page {
-          size: A4 portrait;
-          margin: 1.5cm;
+          size: A4 landscape;
+          margin: 1cm;
         }
       `}} />
 
       {/* Kop Laporan */}
-      <div className="border-b-2 border-black pb-4 text-center relative flex items-center justify-center min-h-[80px]">
+      <div className="border-b-2 border-black pb-3 text-center relative flex items-center justify-center min-h-[70px]">
         {isValidImageUrl(profil?.logoPemdaUrl) && (
           <img 
             src={profil!.logoPemdaUrl!} 
@@ -149,58 +153,108 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
         )}
       </div>
 
-      <div className="mt-4 flex justify-between text-xs text-slate-650">
+      <div className="mt-3 flex justify-between text-[10px] text-slate-650">
         <p>Total Hari Efektif KBM: <strong>{totalHariEfektif} Hari</strong></p>
         <p>Dicetak: {tanggalLaporan}</p>
       </div>
 
-      {/* Tabel Data Rekap */}
-      <table className="w-full mt-4 border-collapse text-xs border border-black text-left">
+      {/* Tabel Data Rekap Harian */}
+      <table className="w-full mt-3 border-collapse border border-black text-left table-fixed">
         <thead>
-          <tr className="bg-slate-100 border-b border-black">
-            <th className="p-2 border-r border-black font-bold text-center">No</th>
-            <th className="p-2 border-r border-black font-bold">NISN</th>
-            <th className="p-2 border-r border-black font-bold">Nama Siswa</th>
-            <th className="p-2 border-r border-black font-bold text-center bg-emerald-50">H</th>
-            <th className="p-2 border-r border-black font-bold text-center bg-sky-50">I</th>
-            <th className="p-2 border-r border-black font-bold text-center bg-amber-50">S</th>
-            <th className="p-2 border-r border-black font-bold text-center bg-rose-50">A</th>
-            <th className="p-2 border-r border-black font-bold text-center">Total</th>
-            <th className="p-2 font-bold text-right">Kehadiran (%)</th>
+          <tr className="bg-slate-100 border-b border-black text-[9px]">
+            <th className="p-1 border-r border-black font-bold text-center w-8" rowSpan={2}>No</th>
+            <th className="p-1 border-r border-black font-bold w-20" rowSpan={2}>NISN</th>
+            <th className="p-1 border-r border-black font-bold w-40" rowSpan={2}>Nama Siswa</th>
+            <th className="border-r border-black font-bold text-center" colSpan={daysInMonth}>Tanggal</th>
+            <th className="border-r border-black font-bold text-center w-28" colSpan={4}>Rekap</th>
+            <th className="font-bold text-right w-12" rowSpan={2}>%</th>
+          </tr>
+          <tr className="bg-slate-100 border-b border-black text-[8px]">
+            {dayNumbers.map((d) => (
+              <th key={d} className="p-0.5 border-r border-black text-center font-semibold w-6">{d}</th>
+            ))}
+            <th className="p-0.5 border-r border-black text-center bg-emerald-50 text-emerald-800 font-bold w-7">H</th>
+            <th className="p-0.5 border-r border-black text-center bg-sky-50 text-sky-800 font-bold w-7">I</th>
+            <th className="p-0.5 border-r border-black text-center bg-amber-50 text-amber-800 font-bold w-7">S</th>
+            <th className="p-0.5 border-r border-black text-center bg-rose-50 text-rose-800 font-bold w-7">A</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-black/40">
-          {rows.map((row) => (
-            <tr key={row.nisn} className="border-b border-black/40">
-              <td className="p-2 border-r border-black text-center">{row.no}</td>
-              <td className="p-2 border-r border-black font-mono">{row.nisn}</td>
-              <td className="p-2 border-r border-black font-semibold">{row.nama}</td>
-              <td className="p-2 border-r border-black text-center bg-emerald-50/20">{row.hadir}</td>
-              <td className="p-2 border-r border-black text-center bg-sky-50/20">{row.izin}</td>
-              <td className="p-2 border-r border-black text-center bg-amber-50/20">{row.sakit}</td>
-              <td className="p-2 border-r border-black text-center bg-rose-50/20 font-bold text-rose-600">{row.alpa}</td>
-              <td className="p-2 border-r border-black text-center">{row.total}</td>
-              <td className="p-2 text-right font-bold">{row.persentase}%</td>
-            </tr>
-          ))}
+          {siswaList.map((siswa, index) => {
+            const studentAbsensi = absensiRecords.filter((r) => r.siswaId === siswa.id);
+            const hadir = studentAbsensi.filter((r) => r.status === 'HADIR').length;
+            const izin = studentAbsensi.filter((r) => r.status === 'IZIN').length;
+            const sakit = studentAbsensi.filter((r) => r.status === 'SAKIT').length;
+            const alpa = studentAbsensi.filter((r) => r.status === 'ALPA').length;
+            
+            const persentase = totalHariEfektif > 0 
+              ? Math.round((hadir / totalHariEfektif) * 100) 
+              : 0;
+
+            return (
+              <tr key={siswa.id} className="border-b border-black/40 text-[9px] hover:bg-slate-50">
+                <td className="p-1 border-r border-black text-center">{index + 1}</td>
+                <td className="p-1 border-r border-black font-mono text-[8px]">{siswa.nisn}</td>
+                <td className="p-1 border-r border-black font-semibold truncate" title={siswa.nama}>{siswa.nama}</td>
+                {dayNumbers.map((d) => {
+                  // Bandingkan tanggal secara timezone-safe
+                  const record = studentAbsensi.find((r) => {
+                    const rDate = new Date(r.tanggal);
+                    return rDate.getDate() === d && 
+                           rDate.getMonth() === month && 
+                           rDate.getFullYear() === year;
+                  });
+                  
+                  let statusChar = '-';
+                  let statusClass = 'text-slate-400';
+                  if (record) {
+                    if (record.status === 'HADIR') {
+                      statusChar = '•'; // Titik kecil agar bersih khas sekolah
+                      statusClass = 'text-emerald-600 font-bold text-[11px]';
+                    } else if (record.status === 'IZIN') {
+                      statusChar = 'I';
+                      statusClass = 'text-sky-600 font-bold';
+                    } else if (record.status === 'SAKIT') {
+                      statusChar = 'S';
+                      statusClass = 'text-amber-600 font-bold';
+                    } else if (record.status === 'ALPA') {
+                      statusChar = 'A';
+                      statusClass = 'text-rose-600 font-black';
+                    }
+                  }
+                  
+                  return (
+                    <td key={d} className={`p-0.5 border-r border-black text-center font-mono ${statusClass}`}>
+                      {statusChar}
+                    </td>
+                  );
+                })}
+                <td className="p-1 border-r border-black text-center bg-emerald-50/20 font-bold">{hadir}</td>
+                <td className="p-1 border-r border-black text-center bg-sky-50/20">{izin}</td>
+                <td className="p-1 border-r border-black text-center bg-amber-50/20">{sakit}</td>
+                <td className="p-1 border-r border-black text-center bg-rose-50/20 font-bold text-rose-600">{alpa}</td>
+                <td className="p-1 text-right font-bold bg-slate-50/50">{persentase}%</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
       {/* Legenda Singkatan */}
-      <div className="mt-4 text-[10px] text-slate-500 space-x-4">
+      <div className="mt-3 text-[9px] text-slate-500 space-x-4">
         <span>* Keterangan:</span>
-        <span><strong>H</strong>: Hadir</span>
+        <span><strong>• (H)</strong>: Hadir</span>
         <span><strong>I</strong>: Izin</span>
         <span><strong>S</strong>: Sakit</span>
         <span><strong>A</strong>: Alpa (Tanpa Keterangan)</span>
       </div>
 
       {/* Kolom Tanda Tangan */}
-      <div className="mt-12 grid grid-cols-2 text-center text-xs gap-8">
+      <div className="mt-8 grid grid-cols-2 text-center text-xs gap-8">
         <div>
           <p>Mengetahui,</p>
           <p>Kepala Sekolah</p>
-          <div className="h-16" />
+          <div className="h-14" />
           <p className="font-bold underline">{profil?.namaKepsek || 'Sudarto, S.Pd'}</p>
           {profil?.nipKepsek && (
             <p className="text-[10px] text-slate-500">NIP. {profil.nipKepsek}</p>
@@ -209,7 +263,7 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
         <div>
           <p>{profil?.namaSekolah.split(' ')[2] || 'Wedusan'}, {tanggalLaporan}</p>
           <p>Guru BK / Wali Kelas</p>
-          <div className="h-16" />
+          <div className="h-14" />
           <p className="font-bold underline">Budi Santoso, S.Pd.</p>
           <p className="text-[10px] text-slate-500">NIP. 198503152010011002</p>
         </div>

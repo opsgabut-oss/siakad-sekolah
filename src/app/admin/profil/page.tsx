@@ -26,9 +26,15 @@ export default function AdminProfilPage() {
   const [uploadingPemda, setUploadingPemda] = useState(false);
   const [uploadingSekolah, setUploadingSekolah] = useState(false);
 
-  const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>, type: 'pemda' | 'sekolah') => {
+  const handleUploadLogo = (e: React.ChangeEvent<HTMLInputElement>, type: 'pemda' | 'sekolah') => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Batasi ukuran file hingga 500KB agar tidak memberatkan database
+    if (file.size > 500 * 1024) {
+      setError('Ukuran logo terlalu besar! Silakan gunakan gambar di bawah 500 KB.');
+      return;
+    }
 
     const setterLoading = type === 'pemda' ? setUploadingPemda : setUploadingSekolah;
     const setterUrl = type === 'pemda' ? setLogoPemdaUrl : setLogoSekolahUrl;
@@ -36,25 +42,17 @@ export default function AdminProfilPage() {
     setterLoading(true);
     setError('');
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', type);
-
-    try {
-      const res = await fetch('/api/admin/profil-sekolah/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Gagal mengunggah gambar');
-
-      setterUrl(data.url);
-    } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan saat mengunggah file');
-    } finally {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64String = event.target?.result as string;
+      setterUrl(base64String);
       setterLoading(false);
-    }
+    };
+    reader.onerror = () => {
+      setError('Gagal membaca file gambar');
+      setterLoading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   useEffect(() => {

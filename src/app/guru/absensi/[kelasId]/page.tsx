@@ -28,7 +28,7 @@ export default async function GuruAbsensiPage({ params, searchParams }: Props) {
     }
   });
 
-  if (!kelas) {
+  if (!kelas || !user.guru || kelas.waliKelasId !== user.guru.id) {
     redirect('/guru/dashboard');
   }
 

@@ -3,7 +3,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import DashboardForm from './DashboardForm';
 import PresensiMandiri from './PresensiMandiri';
-import { Calendar, School, CheckSquare } from 'lucide-react';
+import { Calendar, School, CheckSquare, Lock } from 'lucide-react';
 
 export const revalidate = 0; // Disable cache for live stats
 
@@ -18,10 +18,13 @@ export default async function GuruDashboardPage() {
     where: { aktif: true }
   });
 
-  // Get all classes in active school year
-  const classes = activeTahunAjaran
+  // Get homeroom class for this teacher in active school year
+  const classes = activeTahunAjaran && user.guru
     ? await prisma.kelas.findMany({
-        where: { tahunAjaranId: activeTahunAjaran.id },
+        where: { 
+          tahunAjaranId: activeTahunAjaran.id,
+          waliKelasId: user.guru.id
+        },
         orderBy: { nama: 'asc' }
       })
     : [];
@@ -48,21 +51,35 @@ export default async function GuruDashboardPage() {
           Input Presensi Siswa Harian
         </h3>
         
-        {/* Stats Summary Guru */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
-            <CheckSquare size={22} />
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tahun Ajaran Aktif</h4>
-            <p className="text-sm font-bold text-white mt-0.5">
-              {activeTahunAjaran ? activeTahunAjaran.tahun : 'Belum ditentukan'}
+        {classes.length > 0 ? (
+          <>
+            {/* Stats Summary Guru */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
+                <CheckSquare size={22} />
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tahun Ajaran Aktif</h4>
+                <p className="text-sm font-bold text-white mt-0.5">
+                  {activeTahunAjaran ? activeTahunAjaran.tahun : 'Belum ditentukan'}
+                </p>
+              </div>
+            </div>
+
+            {/* Interactive Form Component */}
+            <DashboardForm classes={classes} />
+          </>
+        ) : (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center space-y-3 shadow-xl">
+            <div className="w-12 h-12 rounded-2xl bg-slate-800/40 text-slate-500 flex items-center justify-center font-bold mx-auto">
+              <Lock size={20} className="text-slate-400" />
+            </div>
+            <h4 className="text-sm font-bold text-slate-300">Modul Presensi Siswa Terkunci</h4>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+              Modul input presensi harian siswa hanya dapat diakses oleh **Wali Kelas**. Anda saat ini tidak terdaftar sebagai Wali Kelas untuk kelas mana pun di tahun ajaran aktif ini.
             </p>
           </div>
-        </div>
-
-        {/* Interactive Form Component */}
-        <DashboardForm classes={classes} />
+        )}
       </div>
     </div>
   );

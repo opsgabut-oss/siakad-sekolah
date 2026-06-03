@@ -69,36 +69,6 @@ export default function LaporanAbsensiPage() {
     setLoading(true);
     setError('');
     try {
-      // Ambil data absensi via API internal (kita juga bisa memprosesnya langsung dari response db atau memanggil endpoint /api/admin/siswa/ ke API yang efisien).
-      // Agar tidak memerlukan penambahan API route terpisah yang terlalu banyak, kita memanggil rekap data kehadiran secara dinamis:
-      // Kita panggil daftar siswa di kelas, dan daftar absensi siswa di kelas tersebut.
-      // Kita manfaatkan pemanggilan route API yang efisien dengan menghitung di client-side untuk tabel dashboard visualnya!
-      
-      const [resSiswa, resAbsensi] = await Promise.all([
-        fetch(`/api/admin/siswa?kelasId=${kelasId}`),
-        // Kita modifikasi request absensi dengan mengambil absensi kelas tersebut.
-        // Endpoint /api/guru/absensi mendukung absensi, mari kita gunakan endpoint yang aman atau fetch data siswa & hitung absensinya.
-        // Oh, wait! Di `/api/admin/siswa` kita mendapatkan data siswa dengan filter kelasId.
-        // Mari kita ambil datanya, dan kita hitung.
-        // Lebih baik jika kita memproses visualisasi ini dari data absensi.
-        // Kita juga bisa membuat endpoint helper atau langsung hitung.
-        // Mari kita fetch siswa, lalu untuk setiap siswa kita fetch riwayat absensinya, atau panggil API.
-        // API absensi guru `/api/guru/absensi` mengambil daftar siswa kelasId.
-        // Mari kita panggil API siswa kelas, lalu ambil datanya.
-        // Untuk meminimalkan load server, mari kita hitung rekap di backend, atau panggil endpoint data absensi yang lengkap.
-        // Tunggu! Kita punya endpoint ekspor `/api/admin/laporan/absensi?kelasId=xxx` yang mengembalikan CSV.
-        // Kita bisa membuat API sederhana atau memanfaatkan fetch absensi yang ada.
-        // Apakah kita memiliki endpoint untuk mengambil data absensi per kelas?
-        // Let's check: `/api/guru/absensi` dengan query param `kelasId` dan `tanggal` mengembalikan daftar absensi hari itu.
-        // Untuk rekap total, mari kita buat sebuah client-side fetch helper atau sebuah data fetcher.
-        // Mari kita check apakah kita bisa mengambil dari database.
-        // Kita bisa membuat sub-route atau memprosesnya secara elegan dengan fetch data terintegrasi.
-        // Mari kita buat route API GET `/api/admin/laporan/rekap` yang mengembalikan JSON data rekap, agar visualisasi tabel dan statistik di halaman ini sinkron dengan data CSV!
-        // Ini ide yang brilian dan sangat rapi!
-        // Mari kita panggil `/api/admin/laporan/rekap?kelasId=xxx` (kita akan membuat API ini setelah ini atau di file yang sama).
-        // Let's implement fetchLaporanData dengan memanggil `/api/admin/laporan/rekap?kelasId=xxx`!
-      ]);
-
       const resRekap = await fetch(`/api/admin/laporan/rekap?kelasId=${kelasId}`);
       if (!resRekap.ok) throw new Error('Gagal memuat rekap absensi');
       const data = await resRekap.json();

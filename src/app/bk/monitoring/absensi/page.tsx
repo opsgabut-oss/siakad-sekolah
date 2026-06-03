@@ -226,10 +226,11 @@ export default function BKMonitoringAbsensiPage() {
     <div className="space-y-6">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          body { background-color: white !important; color: black !important; }
-          .no-print { display: none !important; }
+          body, html { background-color: white !important; color: black !important; }
+          aside, nav, header, footer, button, .no-print, [class*="no-print"] { display: none !important; }
+          main, .flex-1, div[class*="flex-1"], div[class*="max-w-7xl"] { display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
           .print-header { display: block !important; color: black !important; }
-          .print-table { border: 1px solid black !important; color: black !important; }
+          .print-table { border: 1px solid black !important; color: black !important; width: 100% !important; }
           .print-table th, .print-table td { border: 1px solid black !important; color: black !important; padding: 8px !important; }
         }
       `}} />

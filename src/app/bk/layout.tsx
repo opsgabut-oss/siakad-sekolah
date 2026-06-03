@@ -32,7 +32,7 @@ export default async function BKLayout({
   const isKepsek = user.role === 'KEPALA_SEKOLAH';
 
   const sidebar = (
-    <aside className="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between shrink-0">
+    <aside className="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between shrink-0 no-print">
       <div>
         {/* Logo Brand */}
         <div className="p-6 border-b border-slate-800 flex items-center gap-3">

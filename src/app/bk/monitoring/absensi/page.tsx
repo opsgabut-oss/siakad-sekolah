@@ -21,6 +21,28 @@ interface LaporanAbsensiRow {
   persentase: number;
 }
 
+const isValidImageUrl = (url: string | null | undefined) => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/') || url.startsWith('data:image/');
+};
+
+const getLastWorkingDayOfMonth = (bulanStr: string) => {
+  if (!bulanStr) {
+    return new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  const [year, month] = bulanStr.split('-').map(Number);
+  let date = new Date(year, month, 0);
+  
+  const day = date.getDay();
+  if (day === 0) { // Sunday -> Friday
+    date.setDate(date.getDate() - 2);
+  } else if (day === 6) { // Saturday -> Friday
+    date.setDate(date.getDate() - 1);
+  }
+  
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
 export default function BKMonitoringAbsensiPage() {
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [selectedKelasId, setSelectedKelasId] = useState('');
@@ -40,7 +62,6 @@ export default function BKMonitoringAbsensiPage() {
 
   const [activeTab, setActiveTab] = useState<'siswa' | 'guru'>('siswa');
 
-  // Form States for Guru
   const [guruBulan, setGuruBulan] = useState(() => {
     const now = new Date();
     const y = now.getFullYear();
@@ -54,17 +75,17 @@ export default function BKMonitoringAbsensiPage() {
     totalHariKerja: 0,
     totalGuru: 0,
   });
+  const [tanggalCetak, setTanggalCetak] = useState('');
 
   useEffect(() => {
     fetchKelas();
     fetchSchoolProfile();
+    setTanggalCetak(new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }));
   }, []);
 
   useEffect(() => {
     if (selectedKelasId && activeTab === 'siswa') {
       fetchLaporanData(selectedKelasId, selectedBulan);
-    } else {
-      setLaporanRows([]);
     }
   }, [selectedKelasId, selectedBulan, activeTab]);
 
@@ -73,43 +94,6 @@ export default function BKMonitoringAbsensiPage() {
       fetchGuruLaporanData(guruBulan);
     }
   }, [guruBulan, activeTab]);
-
-  const fetchGuruLaporanData = async (bulan: string) => {
-    setLoadingGuru(true);
-    setErrorGuru('');
-    try {
-      const res = await fetch(`/api/admin/laporan/absensi-guru?bulan=${bulan}`);
-      if (!res.ok) throw new Error('Gagal memuat rekap absensi guru');
-      const data = await res.json();
-      setGuruLaporanRows(data.rows);
-      setGuruStatistik(data.statistik);
-    } catch (err: any) {
-      setErrorGuru(err.message || 'Gagal memuat data rekap absensi guru');
-    } finally {
-      setLoadingGuru(false);
-    }
-  };
-
-  const handleExportGuruCSV = () => {
-    if (guruLaporanRows.length === 0) return;
-    
-    let csvContent = "\uFEFF"; // BOM UTF-8
-    csvContent += "No;Nama Guru/Staf;NIP;NIK;Hadir;Izin;Sakit;Alpa;Hari Kerja;Persentase (%)\r\n";
-    
-    guruLaporanRows.forEach((row, idx) => {
-      csvContent += `${idx + 1};${row.nama};${row.nip};${row.nik};${row.hadir};${row.izin};${row.sakit};${row.alpa};${row.total};${row.persentase}%\r\n`;
-    });
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Rekap_Absensi_Guru_${guruBulan}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
 
   const fetchKelas = async () => {
     setLoadingConfig(true);
@@ -166,6 +150,22 @@ export default function BKMonitoringAbsensiPage() {
     }
   };
 
+  const fetchGuruLaporanData = async (bulan: string) => {
+    setLoadingGuru(true);
+    setErrorGuru('');
+    try {
+      const res = await fetch(`/api/admin/laporan/absensi-guru?bulan=${bulan}`);
+      if (!res.ok) throw new Error('Gagal memuat rekap absensi guru');
+      const data = await res.json();
+      setGuruLaporanRows(data.rows);
+      setGuruStatistik(data.statistik);
+    } catch (err: any) {
+      setErrorGuru(err.message || 'Gagal memuat data rekap absensi guru');
+    } finally {
+      setLoadingGuru(false);
+    }
+  };
+
   const handleExportCSV = () => {
     if (!selectedKelasId) return;
     let url = `/api/admin/laporan/absensi?kelasId=${selectedKelasId}`;
@@ -173,6 +173,26 @@ export default function BKMonitoringAbsensiPage() {
       url += `&bulan=${selectedBulan}`;
     }
     window.open(url, '_blank');
+  };
+
+  const handleExportGuruCSV = () => {
+    if (guruLaporanRows.length === 0) return;
+    
+    let csvContent = "\uFEFF";
+    csvContent += "No;Nama Guru/Staf;NIP;NIK;Hadir;Izin;Sakit;Alpa;Hari Kerja;Persentase (%)\r\n";
+    
+    guruLaporanRows.forEach((row, idx) => {
+      csvContent += `${idx + 1};${row.nama};${row.nip};${row.nik};${row.hadir};${row.izin};${row.sakit};${row.alpa};${row.total};${row.persentase}%\r\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Rekap_Absensi_Guru_${guruBulan}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handlePrint = () => {
@@ -194,7 +214,6 @@ export default function BKMonitoringAbsensiPage() {
     return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   };
 
-
   if (loadingConfig) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -205,37 +224,32 @@ export default function BKMonitoringAbsensiPage() {
 
   return (
     <div className="space-y-6">
-      {/* CSS untuk Media Print */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          body {
-            background-color: white !important;
-            color: black !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-header {
-            display: block !important;
-            color: black !important;
-          }
-          .print-table {
-            border: 1px solid black !important;
-            color: black !important;
-          }
-          .print-table th, .print-table td {
-            border: 1px solid black !important;
-            color: black !important;
-            padding: 8px !important;
-          }
-          aside, nav, main {
-            background-color: white !important;
-            color: black !important;
-          }
+          body { background-color: white !important; color: black !important; }
+          .no-print { display: none !important; }
+          .print-header { display: block !important; color: black !important; }
+          .print-table { border: 1px solid black !important; color: black !important; }
+          .print-table th, .print-table td { border: 1px solid black !important; color: black !important; padding: 8px !important; }
         }
       `}} />
 
-      {/* Header Halaman */}
+      <div className="hidden print-header text-center space-y-2 mb-6 text-black relative flex items-center justify-center min-h-[80px] border-b-2 border-black pb-4">
+        {isValidImageUrl(profil?.logoPemdaUrl) && (
+          <img src={profil.logoPemdaUrl} alt="Logo Pemda" className="w-14 h-14 absolute left-0 object-contain print:block animate-fade-in" />
+        )}
+        <div className={`flex-1 text-center ${isValidImageUrl(profil?.logoPemdaUrl) ? 'pl-16' : ''} ${isValidImageUrl(profil?.logoSekolahUrl) ? 'pr-16' : ''}`}>
+          <h2 className="text-[10px] font-bold uppercase tracking-wider leading-none">{profil?.pemerintah || 'Pemerintah Kabupaten Pati'}</h2>
+          <h3 className="text-xs font-bold uppercase tracking-wider leading-none mt-1">{profil?.dinas || 'Dinas Pendidikan dan Kebudayaan'}</h3>
+          <h3 className="text-base font-black uppercase tracking-wide leading-tight mt-1">{profil?.namaSekolah || 'SD Negeri Wedusan'}</h3>
+          <p className="text-[10px] mt-1">Laporan Rekapitulasi Absensi {activeTab === 'siswa' ? 'Siswa' : 'Guru & Staf'} • {activeTab === 'siswa' ? `Kelas: ${getSelectedKelasNama()} • ` : ''}Periode: {activeTab === 'siswa' ? getSelectedBulanLabel() : guruBulan} • TA: {activeTab === 'siswa' ? getSelectedKelasTahun() : '2025/2026'}</p>
+          <p className="text-[9px] text-slate-500 font-bold uppercase">Dicetak pada tanggal: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        </div>
+        {isValidImageUrl(profil?.logoSekolahUrl) && (
+          <img src={profil.logoSekolahUrl} alt="Logo Sekolah" className="w-14 h-14 absolute right-0 object-contain print:block animate-fade-in" />
+        )}
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
@@ -248,546 +262,187 @@ export default function BKMonitoringAbsensiPage() {
           {activeTab === 'siswa' && selectedKelasId && laporanRows.length > 0 && (
             <>
               {selectedBulan ? (
-                <a
-                  href={`/bk/cetak/rekap-absensi?kelasId=${selectedKelasId}&bulan=${selectedBulan}`}
-                  target="_blank"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-violet-500 to-indigo-600 hover:from-violet-650 hover:to-indigo-705 text-white rounded-xl font-semibold text-xs shadow-lg shadow-violet-500/10 transition-all duration-200 cursor-pointer select-none"
-                >
-                  <Printer size={14} />
-                  Cetak Rekap Bulanan
+                <a href={`/bk/cetak/rekap-absensi?kelasId=${selectedKelasId}&bulan=${selectedBulan}`} target="_blank" className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-violet-500 to-indigo-600 text-white rounded-xl font-semibold text-xs shadow-lg transition-all">
+                  <Printer size={14} /> Cetak Rekap Bulanan
                 </a>
               ) : (
-                <button
-                  onClick={handlePrint}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs shadow-lg transition-all duration-200 cursor-pointer select-none"
-                >
-                  <Printer size={14} />
-                  Cetak Layar
+                <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs transition-all">
+                  <Printer size={14} /> Cetak Layar
                 </button>
               )}
-              <button
-                onClick={handleExportCSV}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs shadow-lg shadow-emerald-500/20 transition-all duration-200 cursor-pointer select-none"
-              >
-                <Download size={14} />
-                Ekspor CSV
+              <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs transition-all">
+                <Download size={14} /> Ekspor CSV
               </button>
             </>
           )}
           {activeTab === 'guru' && guruLaporanRows.length > 0 && (
             <>
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs shadow-lg transition-all duration-200 cursor-pointer select-none"
-              >
-                <Printer size={14} />
-                Cetak Laporan
+              <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs transition-all">
+                <Printer size={14} /> Cetak Laporan
               </button>
-              <button
-                onClick={handleExportGuruCSV}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs shadow-lg shadow-emerald-500/20 transition-all duration-200 cursor-pointer select-none"
-              >
-                <Download size={14} />
-                Ekspor CSV
+              <button onClick={handleExportGuruCSV} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs transition-all">
+                <Download size={14} /> Ekspor CSV
               </button>
             </>
           )}
         </div>
       </div>
 
-      {/* Tab Navigasi Utama */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-1.5 flex gap-2 w-full max-w-md no-print">
-        <button
-          onClick={() => setActiveTab('siswa')}
-          className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            activeTab === 'siswa'
-              ? 'bg-slate-800 text-white shadow-xs'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Users size={15} />
-          Absensi Siswa
+        <button onClick={() => setActiveTab('siswa')} className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${activeTab === 'siswa' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>
+          <Users size={15} /> Absensi Siswa
         </button>
-        <button
-          onClick={() => setActiveTab('guru')}
-          className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-            activeTab === 'guru'
-              ? 'bg-slate-800 text-white shadow-xs'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Users size={15} />
-          Absensi Guru & Staf
+        <button onClick={() => setActiveTab('guru')} className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${activeTab === 'guru' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>
+          <Users size={15} /> Absensi Guru & Staf
         </button>
       </div>
 
-      {/* ==================== TAB: LAPORAN SISWA ==================== */}
-      {activeTab === 'siswa' && (
-        <div className="space-y-6">
-          {/* Filter & Pemilihan Kelas */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col lg:flex-row items-center justify-between gap-4 no-print">
-            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <label className="text-sm font-semibold text-slate-300 whitespace-nowrap">Pilih Kelas:</label>
-                <select
-                  value={selectedKelasId}
-                  onChange={(e) => setSelectedKelasId(e.target.value)}
-                  className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-violet-500 transition-colors"
-                >
-                  {kelasList.map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {k.nama}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <label className="text-sm font-semibold text-slate-300 whitespace-nowrap">Pilih Bulan:</label>
-                <input
-                  type="month"
-                  value={selectedBulan}
-                  onChange={(e) => setSelectedBulan(e.target.value)}
-                  className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-violet-500 transition-colors"
-                />
-                {selectedBulan && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedBulan('')}
-                    className="text-xs text-slate-500 hover:text-slate-300 underline cursor-pointer whitespace-nowrap"
-                  >
-                    Semua Bulan
-                  </button>
-                )}
-              </div>
-            </div>
-            {selectedKelasId && (
-              <button
-                onClick={() => fetchLaporanData(selectedKelasId, selectedBulan)}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors w-full sm:w-auto cursor-pointer"
-              >
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                Segarkan Rekap
-              </button>
-            )}
-          </div>
-
-          {/* Grid Statistik Ringkas */}
-          {selectedKelasId && laporanRows.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print-header">
-              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors text-white print:text-black print:border-black">
-                <div className="p-3.5 rounded-xl bg-violet-500/10 text-violet-400 no-print">
-                  <Users size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-slate-700">Total Siswa</p>
-                  <h3 className="text-2xl font-black mt-1">{statistik.totalSiswa} Siswa</h3>
-                </div>
-              </div>
-
-              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors text-white print:text-black print:border-black">
-                <div className="p-3.5 rounded-xl bg-emerald-500/10 text-emerald-400 no-print">
-                  <Percent size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-slate-700">Rata-rata Kehadiran</p>
-                  <h3 className="text-2xl font-black mt-1 text-emerald-455 print:text-black">{statistik.rataRataKehadiran}%</h3>
-                </div>
-              </div>
-
-              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors text-white print:text-black print:border-black">
-                <div className="p-3.5 rounded-xl bg-indigo-500/10 text-indigo-400 no-print">
-                  <CheckCircle size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-slate-700">Total Hari Efektif</p>
-                  <h3 className="text-2xl font-black mt-1">{statistik.totalHariEfektif} Hari Absensi</h3>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tabel Laporan Kehadiran */}
-          {loading ? (
-            <div className="flex justify-center items-center py-20 no-print">
-              <RefreshCw className="animate-spin text-violet-400" size={32} />
-            </div>
-          ) : !selectedKelasId ? (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-12 text-center no-print">
-              <FileSpreadsheet className="mx-auto text-slate-600 mb-3" size={40} />
-              <p className="text-slate-400 text-sm font-medium">Silakan hubungi administrator untuk data kelas.</p>
-            </div>
-          ) : laporanRows.length === 0 ? (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-12 text-center no-print">
-              <BarChart3 className="mx-auto text-slate-600 mb-3" size={40} />
-              <p className="text-slate-400 text-sm font-medium">Belum ada riwayat absensi untuk kelas ini.</p>
-            </div>
-          ) : (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden print-table text-white print:text-black">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-950/40 print:bg-slate-100 text-slate-400 print:text-black">
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider">No</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider">NISN</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider">Nama Siswa</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center bg-emerald-950/10 text-emerald-400 print:bg-transparent print:text-black">Hadir</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center bg-sky-950/10 text-sky-400 print:bg-transparent print:text-black">Izin</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center bg-amber-950/10 text-amber-450 print:bg-transparent print:text-black">Sakit</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center bg-rose-950/10 text-rose-450 print:bg-transparent print:text-black">Alpa</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center">Total Hari</th>
-                      <th className="p-4 text-xs font-semibold uppercase tracking-wider text-right">Persentase</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-850 print:divide-slate-300">
-                    {laporanRows.map((row, index) => (
-                      <tr key={row.siswaId} className="hover:bg-slate-900/30 transition-colors print:hover:bg-transparent">
-                        <td className="p-4 text-sm text-slate-500 print:text-black font-medium">{index + 1}</td>
-                        <td className="p-4 text-sm font-semibold text-slate-400 print:text-black">{row.nisn}</td>
-                        <td className="p-4 text-sm font-bold text-slate-200 print:text-black">{row.nama}</td>
-                        <td className="p-4 text-sm font-bold text-center text-emerald-400 bg-emerald-950/5 print:bg-transparent print:text-black">{row.hadir}</td>
-                        <td className="p-4 text-sm font-bold text-center text-sky-400 bg-sky-950/5 print:bg-transparent print:text-black">{row.izin}</td>
-                        <td className="p-4 text-sm font-bold text-center text-amber-400 bg-amber-950/5 print:bg-transparent print:text-black">{row.sakit}</td>
-                        <td className="p-4 text-sm font-bold text-center text-rose-400 bg-rose-950/5 print:bg-transparent print:text-black">{row.alpa}</td>
-                        <td className="p-4 text-sm font-medium text-center text-slate-350 print:text-black">{row.total}</td>
-                        <td className="p-4 text-sm font-extrabold text-right text-violet-400 print:text-black">
-                          {row.persentase}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Lembar Tanda Tangan saat Cetak */}
-          <div className="hidden print:block mt-12 text-black text-xs">
-            <div className="flex justify-between">
-              <div className="text-center w-48 space-y-16">
-                <p>Guru Wali Kelas,</p>
-                <p className="font-bold underline">( ______________________ )</p>
-              </div>
-              <div className="text-center w-48 space-y-16">
-                <p>Mengetahui,<br />Kepala Sekolah</p>
-                <p className="font-bold underline">{profil?.namaKepsek || '( ______________________ )'}</p>
-                {profil?.nipKepsek && (
-                  <p className="text-[10px] text-slate-500 -mt-1">NIP. {profil.nipKepsek}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== TAB: LAPORAN GURU ==================== */}
-      {activeTab === 'guru' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          {errorGuru && (
-            <div className="p-4 bg-rose-955/60 border border-rose-800 text-rose-300 rounded-2xl text-sm font-medium">
-              {errorGuru}
-            </div>
-          )}
-
-          {/* Filter Bulan */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
-            <div className="w-full sm:w-auto flex items-center gap-3">
-              <label className="text-sm font-semibold text-slate-300 whitespace-nowrap">Pilih Bulan Rekap:</label>
-              <input
-                type="month"
-                value={guruBulan}
-                onChange={(e) => setGuruBulan(e.target.value)}
-                className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-violet-500 transition-colors cursor-pointer"
-              />
-            </div>
-            <button
-              onClick={() => fetchGuruLaporanData(guruBulan)}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors w-full sm:w-auto cursor-pointer"
-            >
-              <RefreshCw size={14} className={loadingGuru ? 'animate-spin' : ''} />
-              Segarkan Rekap
-            </button>
-          </div>
-
-          {/* Statistik Guru */}
-          {guruLaporanRows.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print-header">
-              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors text-white print:text-black print:border-black">
-                <div className="p-3.5 rounded-xl bg-violet-500/10 text-violet-400 no-print">
-                  <Users size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-slate-700">Total Guru & Staf</p>
-                  <h3 className="text-2xl font-black mt-1">{guruStatistik.totalGuru} Orang</h3>
-                </div>
-              </div>
-
-              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors text-white print:text-black print:border-black">
-                <div className="p-3.5 rounded-xl bg-indigo-500/10 text-indigo-400 no-print">
-                  <CheckCircle size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-slate-700">Total Hari Efektif Kerja</p>
-                  <h3 className="text-2xl font-black mt-1">{guruStatistik.totalHariKerja} Hari</h3>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tabel Laporan Guru */}
-          {loadingGuru ? (
-            <div className="flex justify-center items-center py-20">
-              <RefreshCw className="animate-spin text-violet-400" size={32} />
-            </div>
-          ) : guruLaporanRows.length === 0 ? (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-12 text-center no-print">
-              <FileSpreadsheet className="mx-auto text-slate-700 mb-3" size={40} />
-              <p className="text-slate-400 text-sm font-medium">Belum ada riwayat absensi guru untuk periode ini.</p>
-            </div>
-          ) : (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden print-table text-white print:text-black">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-950/40 print:bg-slate-100 text-slate-400 print:text-black text-xs font-semibold uppercase tracking-wider">
-                      <th className="p-4">No</th>
-                      <th className="p-4">Nama Lengkap</th>
-                      <th className="p-4">NIP / NIK</th>
-                      <th className="p-4 text-center bg-emerald-950/10 text-emerald-400 print:bg-transparent print:text-black">Hadir</th>
-                      <th className="p-4 text-center bg-sky-950/10 text-sky-400 print:bg-transparent print:text-black">Izin</th>
-                      <th className="p-4 text-center bg-amber-950/10 text-amber-450 print:bg-transparent print:text-black">Sakit</th>
-                      <th className="p-4 text-center bg-rose-950/10 text-rose-450 print:bg-transparent print:text-black">Alpa</th>
-                      <th className="p-4 text-center">Total Hari</th>
-                      <th className="p-4 text-right">Kehadiran</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-850 print:divide-slate-300 text-sm">
-                    {guruLaporanRows.map((row, index) => (
-                      <tr key={row.guruId} className="hover:bg-slate-900/30 transition-colors print:hover:bg-transparent">
-                        <td className="p-4 text-slate-500 print:text-black font-medium">{index + 1}</td>
-                        <td className="p-4 font-bold text-slate-200 print:text-black">{row.nama}</td>
-                        <td className="p-4 font-semibold text-slate-400 print:text-black">
-                          {row.nip !== '-' ? `${row.nip} (NIP)` : row.nik !== '-' ? `${row.nik} (NIK)` : '-'}
-                        </td>
-                        <td className="p-4 text-center font-bold text-emerald-400 bg-emerald-950/5 print:bg-transparent print:text-black">{row.hadir}</td>
-                        <td className="p-4 text-center font-bold text-sky-400 bg-sky-950/5 print:bg-transparent print:text-black">{row.izin}</td>
-                        <td className="p-4 text-center font-bold text-amber-400 bg-amber-950/5 print:bg-transparent print:text-black">{row.sakit}</td>
-                        <td className="p-4 text-center font-bold text-rose-400 bg-rose-955/5 print:bg-transparent print:text-black">{row.alpa}</td>
-                        <td className="p-4 text-center font-medium text-slate-350 print:text-black">{row.total}</td>
-                        <td className="p-4 text-right font-extrabold text-violet-400 print:text-black">
-                          {row.persentase}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Lembar Tanda Tangan saat Cetak Guru */}
-          <div className="hidden print:block mt-12 text-black text-xs">
-            <div className="flex justify-between">
-              <div className="text-center w-48 space-y-16">
-                <p>&nbsp;</p>
-                <p className="font-bold underline">( ______________________ )</p>
-              </div>
-              <div className="text-center w-48 space-y-16">
-                <p>Mengetahui,<br />Kepala Sekolah</p>
-                <p className="font-bold underline">{profil?.namaKepsek || '( ______________________ )'}</p>
-                {profil?.nipKepsek && (
-                  <p className="text-[10px] text-slate-500 -mt-1">NIP. {profil.nipKepsek}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Kop Surat Header saat Cetak */}
-      <div className="hidden print-header text-center space-y-2 mb-6 text-black relative flex items-center justify-center min-h-[80px] border-b-2 border-black pb-4">
-        {profil?.logoPemdaUrl && (
-          <img 
-            src={profil.logoPemdaUrl} 
-            alt="Logo Pemda" 
-            className="w-14 h-14 absolute left-0 object-contain print:block"
-          />
-        )}
-        <div className={`flex-1 text-center ${profil?.logoPemdaUrl ? 'pl-16' : ''} ${profil?.logoSekolahUrl ? 'pr-16' : ''}`}>
-          <h2 className="text-[10px] font-bold uppercase tracking-wider leading-none">{profil?.pemerintah || 'Pemerintah Kabupaten Pati'}</h2>
-          <h3 className="text-xs font-bold uppercase tracking-wider leading-none mt-1">{profil?.dinas || 'Dinas Pendidikan dan Kebudayaan'}</h3>
-          <h3 className="text-base font-black uppercase tracking-wide leading-tight mt-1">{profil?.namaSekolah || 'SD Negeri Wedusan'}</h3>
-          <p className="text-[10px] mt-1">Laporan Rekapitulasi Absensi {activeTab === 'siswa' ? 'Siswa' : 'Guru & Staf'} • {activeTab === 'siswa' ? `Kelas: ${getSelectedKelasNama()} • ` : ''}Periode: {activeTab === 'siswa' ? getSelectedBulanLabel() : guruBulan} • TA: {activeTab === 'siswa' ? getSelectedKelasTahun() : '2025/2026'}</p>
-          <p className="text-[9px] text-slate-500 font-bold uppercase">Dicetak pada tanggal: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-        </div>
-        {profil?.logoSekolahUrl && (
-          <img 
-            src={profil.logoSekolahUrl} 
-            alt="Logo Sekolah" 
-            className="w-14 h-14 absolute right-0 object-contain print:block"
-          />
-        )}
-      </div>
-
-      {/* Alert Error */}
       {error && (
         <div className="p-4 bg-rose-950/60 border border-rose-800 text-rose-300 rounded-2xl text-sm font-medium no-print">
           {error}
         </div>
       )}
 
-      {/* Filter & Pemilihan Kelas */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col lg:flex-row items-center justify-between gap-4 no-print">
-        <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <label className="text-sm font-semibold text-slate-300 whitespace-nowrap">Pilih Kelas:</label>
-            <select
-              value={selectedKelasId}
-              onChange={(e) => setSelectedKelasId(e.target.value)}
-              className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-violet-500 transition-colors"
-            >
-              {kelasList.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.nama}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <label className="text-sm font-semibold text-slate-300 whitespace-nowrap">Pilih Bulan:</label>
-            <input
-              type="month"
-              value={selectedBulan}
-              onChange={(e) => setSelectedBulan(e.target.value)}
-              className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-violet-500 transition-colors"
-            />
-            {selectedBulan && (
-              <button
-                type="button"
-                onClick={() => setSelectedBulan('')}
-                className="text-xs text-slate-500 hover:text-slate-300 underline cursor-pointer whitespace-nowrap"
-              >
-                Semua Bulan
-              </button>
-            )}
-          </div>
-        </div>
-        {selectedKelasId && (
-          <button
-            onClick={() => fetchLaporanData(selectedKelasId, selectedBulan)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors w-full sm:w-auto cursor-pointer"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            Segarkan Rekap
-          </button>
-        )}
-      </div>
-
-
-      {/* Grid Statistik Ringkas */}
-      {selectedKelasId && laporanRows.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print-header">
-          <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors text-white print:text-black print:border-black">
-            <div className="p-3.5 rounded-xl bg-violet-500/10 text-violet-400 no-print">
-              <Users size={24} />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-slate-700">Total Siswa</p>
-              <h3 className="text-2xl font-black mt-1">{statistik.totalSiswa} Siswa</h3>
+      {activeTab === 'siswa' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col lg:flex-row items-center justify-between gap-4 no-print">
+            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <label className="text-sm font-semibold text-slate-300">Pilih Kelas:</label>
+                <select value={selectedKelasId} onChange={(e) => setSelectedKelasId(e.target.value)} className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm">
+                  {kelasList.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <label className="text-sm font-semibold text-slate-300">Pilih Bulan:</label>
+                <input type="month" value={selectedBulan} onChange={(e) => setSelectedBulan(e.target.value)} className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm" />
+              </div>
             </div>
           </div>
 
-          <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors text-white print:text-black print:border-black">
-            <div className="p-3.5 rounded-xl bg-emerald-500/10 text-emerald-400 no-print">
-              <Percent size={24} />
+          {selectedKelasId && laporanRows.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 text-white print:text-black">
+                <div className="p-3.5 rounded-xl bg-violet-500/10 text-violet-400 no-print"><Users size={24} /></div>
+                <div><p className="text-xs font-semibold text-slate-500">Total Siswa</p><h3 className="text-2xl font-black mt-1">{statistik.totalSiswa} Siswa</h3></div>
+              </div>
+              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 text-white print:text-black">
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 text-emerald-400 no-print"><Percent size={24} /></div>
+                <div><p className="text-xs font-semibold text-slate-500">Rata-rata Kehadiran</p><h3 className="text-2xl font-black mt-1">{statistik.rataRataKehadiran}%</h3></div>
+              </div>
+              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 text-white print:text-black">
+                <div className="p-3.5 rounded-xl bg-indigo-500/10 text-indigo-400 no-print"><CheckCircle size={24} /></div>
+                <div><p className="text-xs font-semibold text-slate-500">Total Hari Efektif</p><h3 className="text-2xl font-black mt-1">{statistik.totalHariEfektif} Hari</h3></div>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-slate-700">Rata-rata Kehadiran</p>
-              <h3 className="text-2xl font-black mt-1 text-emerald-455 print:text-black">{statistik.rataRataKehadiran}%</h3>
-            </div>
-          </div>
+          )}
 
-          <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-800 transition-colors text-white print:text-black print:border-black">
-            <div className="p-3.5 rounded-xl bg-indigo-500/10 text-indigo-400 no-print">
-              <CheckCircle size={24} />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-slate-700">Total Hari Efektif</p>
-              <h3 className="text-2xl font-black mt-1">{statistik.totalHariEfektif} Hari Absensi</h3>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tabel Laporan Kehadiran */}
-      {loading ? (
-        <div className="flex justify-center items-center py-20 no-print">
-          <RefreshCw className="animate-spin text-violet-400" size={32} />
-        </div>
-      ) : !selectedKelasId ? (
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-12 text-center no-print">
-          <FileSpreadsheet className="mx-auto text-slate-600 mb-3" size={40} />
-          <p className="text-slate-400 text-sm font-medium">Silakan hubungi administrator untuk data kelas.</p>
-        </div>
-      ) : laporanRows.length === 0 ? (
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-12 text-center no-print">
-          <BarChart3 className="mx-auto text-slate-600 mb-3" size={40} />
-          <p className="text-slate-400 text-sm font-medium">Belum ada riwayat absensi untuk kelas ini.</p>
-        </div>
-      ) : (
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden print-table text-white print:text-black">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/40 print:bg-slate-100 text-slate-400 print:text-black">
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider">No</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider">NISN</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider">Nama Siswa</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center bg-emerald-950/10 text-emerald-400 print:bg-transparent print:text-black">Hadir</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center bg-sky-950/10 text-sky-400 print:bg-transparent print:text-black">Izin</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center bg-amber-950/10 text-amber-450 print:bg-transparent print:text-black">Sakit</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center bg-rose-950/10 text-rose-450 print:bg-transparent print:text-black">Alpa</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-center">Total Hari</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-right">Persentase</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-850 print:divide-slate-300">
-                {laporanRows.map((row, index) => (
-                  <tr key={row.siswaId} className="hover:bg-slate-900/30 transition-colors print:hover:bg-transparent">
-                    <td className="p-4 text-sm text-slate-500 print:text-black font-medium">{index + 1}</td>
-                    <td className="p-4 text-sm font-semibold text-slate-400 print:text-black">{row.nisn}</td>
-                    <td className="p-4 text-sm font-bold text-slate-200 print:text-black">{row.nama}</td>
-                    <td className="p-4 text-sm font-bold text-center text-emerald-400 bg-emerald-950/5 print:bg-transparent print:text-black">{row.hadir}</td>
-                    <td className="p-4 text-sm font-bold text-center text-sky-400 bg-sky-950/5 print:bg-transparent print:text-black">{row.izin}</td>
-                    <td className="p-4 text-sm font-bold text-center text-amber-400 bg-amber-950/5 print:bg-transparent print:text-black">{row.sakit}</td>
-                    <td className="p-4 text-sm font-bold text-center text-rose-400 bg-rose-950/5 print:bg-transparent print:text-black">{row.alpa}</td>
-                    <td className="p-4 text-sm font-medium text-center text-slate-350 print:text-black">{row.total}</td>
-                    <td className="p-4 text-sm font-extrabold text-right text-violet-400 print:text-black">
-                      {row.persentase}%
-                    </td>
+          {!loading && laporanRows.length > 0 && (
+            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden print-table text-white print:text-black">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400">
+                    <th className="p-4 text-xs font-semibold uppercase">No</th>
+                    <th className="p-4 text-xs font-semibold uppercase">NISN</th>
+                    <th className="p-4 text-xs font-semibold uppercase">Nama Siswa</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Hadir</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Izin</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Sakit</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Alpa</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Total</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-right">Persentase</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {laporanRows.map((row, index) => (
+                    <tr key={row.siswaId} className="border-t border-slate-800">
+                      <td className="p-4 text-sm text-slate-500">{index + 1}</td>
+                      <td className="p-4 text-sm font-semibold">{row.nisn}</td>
+                      <td className="p-4 text-sm font-bold">{row.nama}</td>
+                      <td className="p-4 text-sm font-bold text-center text-emerald-400">{row.hadir}</td>
+                      <td className="p-4 text-sm font-bold text-center text-sky-400">{row.izin}</td>
+                      <td className="p-4 text-sm font-bold text-center text-amber-400">{row.sakit}</td>
+                      <td className="p-4 text-sm font-bold text-center text-rose-400">{row.alpa}</td>
+                      <td className="p-4 text-sm font-medium text-center">{row.total}</td>
+                      <td className="p-4 text-sm font-extrabold text-right text-violet-400">{row.persentase}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Lembar Tanda Tangan saat Cetak */}
-      <div className="hidden print:block mt-12 text-black">
-        <div className="flex justify-between">
-          <div className="text-center w-48 space-y-16">
-            <p>Guru Wali Kelas,</p>
-            <p className="font-bold underline">( ______________________ )</p>
+      {activeTab === 'guru' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
+            <div className="w-full sm:w-auto flex items-center gap-3">
+              <label className="text-sm font-semibold text-slate-300">Pilih Bulan:</label>
+              <input type="month" value={guruBulan} onChange={(e) => setGuruBulan(e.target.value)} className="w-full sm:w-48 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm" />
+            </div>
           </div>
-          <div className="text-center w-48 space-y-16">
-            <p>Mengetahui,<br />Kepala Sekolah</p>
-            <p className="font-bold underline">{profil?.namaKepsek || '( ______________________ )'}</p>
-            {profil?.nipKepsek && (
-              <p className="text-[10px] text-slate-500 -mt-1">NIP. {profil.nipKepsek}</p>
-            )}
-          </div>
+          {guruLaporanRows.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 text-white print:text-black">
+                <div className="p-3.5 rounded-xl bg-violet-500/10 text-violet-400 no-print"><Users size={24} /></div>
+                <div><p className="text-xs font-semibold text-slate-500">Total Guru</p><h3 className="text-2xl font-black mt-1">{guruStatistik.totalGuru}</h3></div>
+              </div>
+              <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 flex items-center gap-4 text-white print:text-black">
+                <div className="p-3.5 rounded-xl bg-indigo-500/10 text-indigo-400 no-print"><CheckCircle size={24} /></div>
+                <div><p className="text-xs font-semibold text-slate-500">Total Hari Kerja</p><h3 className="text-2xl font-black mt-1">{guruStatistik.totalHariKerja}</h3></div>
+              </div>
+            </div>
+          )}
+          {!loadingGuru && guruLaporanRows.length > 0 && (
+            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden print-table text-white print:text-black">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400">
+                    <th className="p-4 text-xs font-semibold uppercase">No</th>
+                    <th className="p-4 text-xs font-semibold uppercase">Nama</th>
+                    <th className="p-4 text-xs font-semibold uppercase">NIP/NIK</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Hadir</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Izin</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Sakit</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Alpa</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-center">Total</th>
+                    <th className="p-4 text-xs font-semibold uppercase text-right">Persentase</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {guruLaporanRows.map((row, index) => (
+                    <tr key={row.guruId} className="border-t border-slate-800">
+                      <td className="p-4 text-sm">{index + 1}</td>
+                      <td className="p-4 text-sm font-bold">{row.nama}</td>
+                      <td className="p-4 text-sm">{row.nip !== '-' ? row.nip : row.nik}</td>
+                      <td className="p-4 text-center font-bold text-emerald-400">{row.hadir}</td>
+                      <td className="p-4 text-center font-bold text-sky-400">{row.izin}</td>
+                      <td className="p-4 text-center font-bold text-amber-400">{row.sakit}</td>
+                      <td className="p-4 text-center font-bold text-rose-400">{row.alpa}</td>
+                      <td className="p-4 text-center font-medium">{row.total}</td>
+                      <td className="p-4 text-right font-extrabold text-violet-400">{row.persentase}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Kolom Tanda Tangan (Hanya Tampil Saat Cetak) */}
+      <div className="hidden print:grid grid-cols-3 text-xs mt-12 text-black">
+        <div className="col-span-2"></div>
+        <div className="text-center">
+          <p>{profil?.namaSekolah?.split(' ')[2] || 'Wedusan'}, {getLastWorkingDayOfMonth(activeTab === 'siswa' ? selectedBulan : guruBulan)}</p>
+          <p>Mengetahui,</p>
+          <p>Kepala Sekolah</p>
+          <div className="h-16" />
+          <p className="font-bold underline">{profil?.namaKepsek || 'Sudarto, S.Pd'}</p>
+          {profil?.nipKepsek && (
+            <p className="text-[10px] text-slate-500">NIP. {profil.nipKepsek}</p>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { School, Save, Loader2, Link as LinkIcon, RefreshCw, AlertCircle, Building } from 'lucide-react';
+import { School, Save, Loader2, Link as LinkIcon, RefreshCw, AlertCircle, Building, Upload } from 'lucide-react';
 
 export default function AdminProfilPage() {
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,39 @@ export default function AdminProfilPage() {
   const [namaKepsek, setNamaKepsek] = useState('');
   const [nipKepsek, setNipKepsek] = useState('');
   const [tahunAjaranAktif, setTahunAjaranAktif] = useState('');
+  const [uploadingPemda, setUploadingPemda] = useState(false);
+  const [uploadingSekolah, setUploadingSekolah] = useState(false);
 
+  const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>, type: 'pemda' | 'sekolah') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const setterLoading = type === 'pemda' ? setUploadingPemda : setUploadingSekolah;
+    const setterUrl = type === 'pemda' ? setLogoPemdaUrl : setLogoSekolahUrl;
+
+    setterLoading(true);
+    setError('');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+
+    try {
+      const res = await fetch('/api/admin/profil-sekolah/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal mengunggah gambar');
+
+      setterUrl(data.url);
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan saat mengunggah file');
+    } finally {
+      setterLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchProfil();
@@ -260,41 +292,151 @@ export default function AdminProfilPage() {
           </div>
 
           {/* Logo URLs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-355 uppercase block">URL Logo Pemda (Kiri Kop - Opsional)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                  <LinkIcon size={14} />
+              <label className="text-xs font-semibold text-slate-355 uppercase block">Logo Pemerintah Daerah (Kiri Kop - Opsional)</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <LinkIcon size={14} />
+                  </div>
+                  <input
+                    type="text"
+                    value={logoPemdaUrl}
+                    onChange={(e) => setLogoPemdaUrl(e.target.value)}
+                    placeholder="Masukkan link gambar atau unggah file..."
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                  />
                 </div>
-                <input
-                  type="url"
-                  value={logoPemdaUrl}
-                  onChange={(e) => setLogoPemdaUrl(e.target.value)}
-                  placeholder="Masukkan link gambar logo Pemda..."
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
-                />
+                <label className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all shrink-0 select-none">
+                  {uploadingPemda ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Upload size={14} />
+                  )}
+                  {uploadingPemda ? 'Unggah...' : 'Pilih File'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleUploadLogo(e, 'pemda')}
+                    disabled={uploadingPemda}
+                    className="hidden"
+                  />
+                </label>
               </div>
+              {logoPemdaUrl && (
+                <div className="mt-2 flex items-center gap-3 bg-slate-955/60 p-3 rounded-xl border border-slate-800">
+                  <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img 
+                      src={logoPemdaUrl} 
+                      alt="Pratinjau Pemda" 
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          const errIndicator = parent.querySelector('.err-indicator');
+                          if (errIndicator) (errIndicator as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                      onLoad={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'block';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          const errIndicator = parent.querySelector('.err-indicator');
+                          if (errIndicator) (errIndicator as HTMLElement).style.display = 'none';
+                        }
+                      }}
+                    />
+                    <div className="err-indicator hidden w-full h-full items-center justify-center text-rose-500">
+                      <AlertCircle size={20} />
+                    </div>
+                  </div>
+                  <div className="overflow-hidden flex-1">
+                    <p className="text-xs font-semibold text-slate-200">Pratinjau Logo Pemda</p>
+                    <p className="text-[10px] text-slate-500 truncate">{logoPemdaUrl}</p>
+                    <p className="text-[9px] text-rose-400 err-indicator hidden mt-0.5 font-medium">
+                      Tautan gambar tidak valid atau tidak dapat dimuat.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-355 uppercase block">URL Logo Sekolah (Kanan Kop - Opsional)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                  <LinkIcon size={14} />
+              <label className="text-xs font-semibold text-slate-355 uppercase block">Logo Sekolah Resmi (Kanan Kop - Opsional)</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <LinkIcon size={14} />
+                  </div>
+                  <input
+                    type="text"
+                    value={logoSekolahUrl}
+                    onChange={(e) => setLogoSekolahUrl(e.target.value)}
+                    placeholder="Masukkan link gambar atau unggah file..."
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                  />
                 </div>
-                <input
-                  type="url"
-                  value={logoSekolahUrl}
-                  onChange={(e) => setLogoSekolahUrl(e.target.value)}
-                  placeholder="Masukkan link gambar logo Sekolah..."
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
-                />
+                <label className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all shrink-0 select-none">
+                  {uploadingSekolah ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Upload size={14} />
+                  )}
+                  {uploadingSekolah ? 'Unggah...' : 'Pilih File'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleUploadLogo(e, 'sekolah')}
+                    disabled={uploadingSekolah}
+                    className="hidden"
+                  />
+                </label>
               </div>
+              {logoSekolahUrl && (
+                <div className="mt-2 flex items-center gap-3 bg-slate-955/60 p-3 rounded-xl border border-slate-800">
+                  <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img 
+                      src={logoSekolahUrl} 
+                      alt="Pratinjau Sekolah" 
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          const errIndicator = parent.querySelector('.err-indicator');
+                          if (errIndicator) (errIndicator as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                      onLoad={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'block';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          const errIndicator = parent.querySelector('.err-indicator');
+                          if (errIndicator) (errIndicator as HTMLElement).style.display = 'none';
+                        }
+                      }}
+                    />
+                    <div className="err-indicator hidden w-full h-full items-center justify-center text-rose-500">
+                      <AlertCircle size={20} />
+                    </div>
+                  </div>
+                  <div className="overflow-hidden flex-1">
+                    <p className="text-xs font-semibold text-slate-200">Pratinjau Logo Sekolah</p>
+                    <p className="text-[10px] text-slate-500 truncate">{logoSekolahUrl}</p>
+                    <p className="text-[9px] text-rose-400 err-indicator hidden mt-0.5 font-medium">
+                      Tautan gambar tidak valid atau tidak dapat dimuat.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <p className="text-[10px] text-slate-500">
-            *Tautan URL logo ini akan dirender secara otomatis pada Kop Surat Resmi (Logo Pemda di sebelah kiri, Logo Sekolah di sebelah kanan).
+            *Logo yang Anda pilih akan diunggah ke sistem dan dirender secara otomatis pada Kop Surat Resmi (Logo Pemda di sebelah kiri, Logo Sekolah di sebelah kanan).
           </p>
         </div>
 

@@ -53,6 +53,18 @@ export default function AdminSiswaPage() {
   } | null>(null);
   const [importing, setImporting] = useState(false);
 
+  const handleDownloadTemplate = () => {
+    const csvContent = "\uFEFFnisn;nama;kelas;kontak orang tua\n1122334455;Dian Permana;Kelas 5;081234567890\n";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "template_import_siswa.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     fetchSiswa();
     fetchKelas();
@@ -268,6 +280,13 @@ export default function AdminSiswaPage() {
           <p className="text-slate-400 mt-1 text-sm">Kelola data siswa dan import data massal lewat file CSV.</p>
         </div>
         <div className="flex gap-3 flex-wrap">
+          <button
+            onClick={handleDownloadTemplate}
+            className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-indigo-400 hover:text-indigo-350 border border-slate-800 hover:border-slate-700 rounded-2xl text-xs font-semibold shadow-lg transition-all duration-200 flex items-center gap-2 cursor-pointer select-none"
+          >
+            <Download size={16} />
+            Unduh Template Impor (CSV)
+          </button>
           <a
             href="/api/admin/siswa/export"
             target="_blank"
@@ -547,6 +566,15 @@ export default function AdminSiswaPage() {
                   Gunakan format CSV dengan koma (`,`) atau titik-koma (`;`) sebagai pembatas kolom. Header baris pertama wajib berisi kolom:
                   <code className="mx-1 px-1 bg-slate-900 text-indigo-300 font-mono text-[10px] border border-slate-800 rounded">nisn, nama, kelas, kontak orang tua</code>
                 </p>
+                <div className="mt-1 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplate}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg text-[11px] font-bold transition-all cursor-pointer border border-indigo-500/20 select-none"
+                  >
+                    <Download size={12} /> Unduh File Template CSV
+                  </button>
+                </div>
                 <pre className="p-2.5 bg-slate-950 border border-slate-900 rounded-lg text-[10px] font-mono text-emerald-400 overflow-x-auto select-all">
                   {"nisn;nama;kelas;kontak orang tua\n1234567890;Rian Hidayat;Kelas 6;085222333444\n0987654321;Laras Ati;Kelas 6;081333444555"}
                 </pre>

@@ -87,13 +87,15 @@ export default async function BKLayout({
             Poin Pelanggaran
           </Link>
 
-          <Link
-            href="/bk/monitoring/absensi"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-          >
-            <FileSpreadsheet size={18} />
-            Laporan Kehadiran
-          </Link>
+          {!isKepsek && (
+            <Link
+              href="/bk/monitoring/absensi"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <FileSpreadsheet size={18} />
+              Laporan Kehadiran
+            </Link>
+          )}
 
           <Link
             href="/bk/kelulusan"

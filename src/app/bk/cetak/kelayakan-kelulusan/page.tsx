@@ -5,6 +5,11 @@ interface PageProps {
   searchParams: Promise<{ siswaId?: string }>;
 }
 
+const isValidImageUrl = (url: string | null | undefined) => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/') || url.startsWith('data:image/');
+};
+
 export default async function KelayakanKelulusanPrintPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const { siswaId } = params;
@@ -101,14 +106,14 @@ export default async function KelayakanKelulusanPrintPage({ searchParams }: Page
 
       {/* Kop Dokumen */}
       <div className="border-b-2 border-black pb-4 text-center relative flex items-center justify-center min-h-[80px]">
-        {profil?.logoPemdaUrl && (
+        {isValidImageUrl(profil?.logoPemdaUrl) && (
           <img 
-            src={profil.logoPemdaUrl} 
+            src={profil!.logoPemdaUrl!} 
             alt="Logo Pemda" 
             className="w-14 h-14 absolute left-0 object-contain print:block"
           />
         )}
-        <div className={`flex-1 text-center ${profil?.logoPemdaUrl ? 'pl-16' : ''} ${profil?.logoSekolahUrl ? 'pr-16' : ''}`}>
+        <div className={`flex-1 text-center ${isValidImageUrl(profil?.logoPemdaUrl) ? 'pl-16' : ''} ${isValidImageUrl(profil?.logoSekolahUrl) ? 'pr-16' : ''}`}>
           <h3 className="text-xs font-bold uppercase tracking-wider leading-none">
             {profil?.pemerintah || 'Pemerintah Kabupaten Pati'}
           </h3>
@@ -125,9 +130,9 @@ export default async function KelayakanKelulusanPrintPage({ searchParams }: Page
             Tahun Ajaran: {siswa.kelas.tahunAjaran.tahun}
           </p>
         </div>
-        {profil?.logoSekolahUrl && (
+        {isValidImageUrl(profil?.logoSekolahUrl) && (
           <img 
-            src={profil.logoSekolahUrl} 
+            src={profil!.logoSekolahUrl!} 
             alt="Logo Sekolah" 
             className="w-14 h-14 absolute right-0 object-contain print:block"
           />

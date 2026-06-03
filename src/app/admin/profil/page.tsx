@@ -21,6 +21,8 @@ export default function AdminProfilPage() {
   const [logoUrl, setLogoUrl] = useState('');
   const [namaKepsek, setNamaKepsek] = useState('');
   const [nipKepsek, setNipKepsek] = useState('');
+  const [tahunAjaranAktif, setTahunAjaranAktif] = useState('');
+
 
   useEffect(() => {
     fetchProfil();
@@ -44,11 +46,13 @@ export default function AdminProfilPage() {
       setLogoUrl(data.logoUrl || '');
       setNamaKepsek(data.namaKepsek || '');
       setNipKepsek(data.nipKepsek || '');
+      setTahunAjaranAktif(data.tahunAjaranAktif || '');
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan');
     } finally {
       setLoading(false);
     }
+
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,9 +81,11 @@ export default function AdminProfilPage() {
           website,
           logoUrl: logoUrl || null,
           namaKepsek,
-          nipKepsek: nipKepsek || null
+          nipKepsek: nipKepsek || null,
+          tahunAjaranAktif
         }),
       });
+
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Gagal menyimpan profil');
@@ -160,9 +166,9 @@ export default function AdminProfilPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2 md:col-span-2">
-              <label className="text-xs font-semibold text-slate-350 uppercase block">Nama Sekolah Resmi (Baris 3)</label>
+              <label className="text-xs font-semibold text-slate-355 uppercase block">Nama Sekolah Resmi (Baris 3)</label>
               <input
                 type="text"
                 value={namaSekolah}
@@ -173,16 +179,28 @@ export default function AdminProfilPage() {
             </div>
 
             <div className="space-y-2 md:col-span-1">
-              <label className="text-xs font-semibold text-slate-350 uppercase block">NPSN</label>
+              <label className="text-xs font-semibold text-slate-355 uppercase block">NPSN</label>
               <input
                 type="text"
-                value={npsn}
+                value={npsn || ''}
                 onChange={(e) => setNpsn(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="Masukkan NPSN..."
                 className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
+
+            <div className="space-y-2 md:col-span-1">
+              <label className="text-xs font-semibold text-slate-355 uppercase block">Tahun Ajaran Aktif</label>
+              <input
+                type="text"
+                value={tahunAjaranAktif}
+                onChange={(e) => setTahunAjaranAktif(e.target.value)}
+                placeholder="Contoh: 2025/2026"
+                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+              />
+            </div>
           </div>
+
 
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-350 uppercase block">Alamat Sekolah Lengkap (Baris 4)</label>

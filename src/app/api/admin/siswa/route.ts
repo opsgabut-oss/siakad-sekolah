@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
 
 export async function GET() {
   const user = await getAuthenticatedUser();
@@ -49,14 +50,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Siswa dengan NISN ini sudah terdaftar' }, { status: 400 });
     }
 
-    const newSiswa = await prisma.siswa.create({
-      data: {
-        nisn,
-        nama,
-        kelasId,
-        kontakOrangTua,
-        tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null
-      }
+    // Hash default passwords
+    const studentPasswordHash = await bcrypt.hash('siswa123', 10);
+    const parentPasswordHash = await bcrypt.hash('ortu123', 10);
+
+    const newSiswa = await prisma.$transaction(async (tx) => {
+      // 1. Create Siswa User
+      const studentUser = await tx.user.create({
+        data: {
+          username: `siswa.${nisn}`,
+          password: studentPasswordHash,
+          role: 'SISWA'
+        }
+      });
+
+      // 2. Create Ortu User
+      const parentUser = await tx.user.create({
+        data: {
+          username: `ortu.${nisn}`,
+          password: parentPasswordHash,
+          role: 'ORANG_TUA'
+        }
+      });
+
+      // 3. Create Siswa
+      const siswa = await tx.siswa.create({
+        data: {
+          nisn,
+          nama,
+          kelasId,
+          kontakOrangTua,
+          tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null,
+          userId: studentUser.id,
+          orangTuaUserId: parentUser.id
+        }
+      });
+
+      return siswa;
     });
 
     return NextResponse.json(newSiswa, { status: 201 });
@@ -65,3 +95,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Gagal menambahkan data siswa' }, { status: 500 });
   }
 }
+

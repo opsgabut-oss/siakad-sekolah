@@ -76,7 +76,15 @@ export default async function AdminLayout({
               Data Siswa
             </Link>
             <Link
+              href="/admin/kenaikan"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <GraduationCap size={18} className="text-violet-400" />
+              Kenaikan & Kelulusan
+            </Link>
+            <Link
               href="/admin/mapel"
+
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
             >
               <BookOpen size={18} />

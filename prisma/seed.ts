@@ -202,19 +202,34 @@ async function main() {
   console.log('Created Siswa & Orang Tua profiles for:', siswa1.nama, ',', siswa2.nama, ',', siswa3.nama);
 
   // 6. Create Mata Pelajaran (Mapel)
-  const mapelMTK = await prisma.mataPelajaran.create({
-    data: { nama: 'Matematika', kode: 'MTK' },
+  const mapelPABP = await prisma.mataPelajaran.create({
+    data: { nama: 'Pendidikan Agama dan Budi Pekerti', kode: 'PABP' },
+  });
+  const mapelPP = await prisma.mataPelajaran.create({
+    data: { nama: 'Pendidikan Pancasila', kode: 'PP' },
   });
   const mapelIND = await prisma.mataPelajaran.create({
     data: { nama: 'Bahasa Indonesia', kode: 'IND' },
   });
+  const mapelMTK = await prisma.mataPelajaran.create({
+    data: { nama: 'Matematika', kode: 'MTK' },
+  });
+  const mapelIPAS = await prisma.mataPelajaran.create({
+    data: { nama: 'Ilmu Pengetahuan Alam dan Sosial', kode: 'IPAS' },
+  });
+  const mapelSB = await prisma.mataPelajaran.create({
+    data: { nama: 'Seni dan Budaya', kode: 'SB' },
+  });
+  const mapelPJOK = await prisma.mataPelajaran.create({
+    data: { nama: 'Pendidikan Jasmani, Olahraga, dan Kesehatan', kode: 'PJOK' },
+  });
   const mapelING = await prisma.mataPelajaran.create({
     data: { nama: 'Bahasa Inggris', kode: 'ING' },
   });
-  const mapelFIS = await prisma.mataPelajaran.create({
-    data: { nama: 'Fisika', kode: 'FIS' },
+  const mapelBJAW = await prisma.mataPelajaran.create({
+    data: { nama: 'Bahasa Jawa', kode: 'BJAW' },
   });
-  console.log('Created Mata Pelajaran:', mapelMTK.nama, ',', mapelIND.nama, ',', mapelING.nama, ',', mapelFIS.nama);
+  console.log('Created Merdeka Curriculum subjects');
 
   // 7. Create Jadwal Pelajaran (Kelas 6)
   await prisma.jadwalPelajaran.createMany({
@@ -237,7 +252,7 @@ async function main() {
       },
       {
         kelasId: kelas6.id,
-        mataPelajaranId: mapelFIS.id,
+        mataPelajaranId: mapelIPAS.id,
         guruId: guru1.id,
         hari: Hari.SELASA,
         jamMulai: '07:30',
@@ -263,7 +278,7 @@ async function main() {
         mataPelajaranId: mapelMTK.id,
         jenis: JenisNilai.TUGAS,
         nilai: 85,
-        keterangan: 'Tugas Aljabar Linear',
+        keterangan: 'Tugas Operasi Pecahan',
       },
       {
         siswaId: siswa1.id,
@@ -289,6 +304,7 @@ async function main() {
     ],
   });
   console.log('Created sample Grades for Rian Hidayat');
+
 
   console.log('Database seeding completed successfully!');
 }

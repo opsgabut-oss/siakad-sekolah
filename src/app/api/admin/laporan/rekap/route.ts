@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const kelasId = searchParams.get('kelasId');
+    const bulan = searchParams.get('bulan'); // e.g. YYYY-MM
 
     if (!kelasId) {
       return NextResponse.json({ message: 'kelasId wajib disertakan' }, { status: 400 });
@@ -21,10 +22,25 @@ export async function GET(request: Request) {
       orderBy: { nama: 'asc' },
     });
 
+    const absensiWhereClause: any = {
+      siswa: { kelasId },
+    };
+
+    if (bulan) {
+      const [yearStr, monthStr] = bulan.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10) - 1;
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+
+      absensiWhereClause.tanggal = {
+        gte: startDate,
+        lte: endDate,
+      };
+    }
+
     const absensiList = await prisma.absensi.findMany({
-      where: {
-        siswa: { kelasId },
-      },
+      where: absensiWhereClause,
     });
 
     let totalKehadiranSiswaSum = 0;

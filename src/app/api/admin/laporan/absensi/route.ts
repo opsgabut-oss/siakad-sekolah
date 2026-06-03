@@ -32,11 +32,31 @@ export async function GET(request: Request) {
       orderBy: { nama: 'asc' },
     });
 
+    const bulan = searchParams.get('bulan');
+    let periodeLabel = 'Keseluruhan';
+
+    const absensiWhereClause: any = {
+      siswa: { kelasId },
+    };
+
+    if (bulan) {
+      const [yearStr, monthStr] = bulan.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10) - 1;
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+
+      absensiWhereClause.tanggal = {
+        gte: startDate,
+        lte: endDate,
+      };
+      
+      periodeLabel = startDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    }
+
     // Ambil data absensi
     const absensiList = await prisma.absensi.findMany({
-      where: {
-        siswa: { kelasId },
-      },
+      where: absensiWhereClause,
     });
 
     // Generate konten CSV

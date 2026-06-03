@@ -29,7 +29,15 @@ export async function GET() {
         }
       });
     }
-    return NextResponse.json(profil);
+
+    const activeTA = await prisma.tahunAjaran.findFirst({
+      where: { aktif: true }
+    });
+
+    return NextResponse.json({
+      ...profil,
+      tahunAjaranAktif: activeTA ? activeTA.tahun : ''
+    });
   } catch (error) {
     console.error('Fetch profil error:', error);
     return NextResponse.json({ message: 'Gagal memuat profil sekolah' }, { status: 500 });
@@ -44,46 +52,105 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { pemerintah, dinas, namaSekolah, npsn, alamat, telepon, email, website, logoUrl, namaKepsek, nipKepsek } = body;
+    const { 
+      pemerintah, 
+      dinas, 
+      namaSekolah, 
+      npsn, 
+      alamat, 
+      telepon, 
+      email, 
+      website, 
+      logoUrl, 
+      namaKepsek, 
+      nipKepsek,
+      tahunAjaranAktif 
+    } = body;
 
     if (!pemerintah || !dinas || !namaSekolah || !alamat || !namaKepsek) {
       return NextResponse.json({ message: 'Kolom utama wajib diisi' }, { status: 400 });
     }
 
-    const profil = await prisma.profilSekolah.upsert({
-      where: { id: 'single-profile' },
-      update: {
-        pemerintah,
-        dinas,
-        namaSekolah,
-        npsn,
-        alamat,
-        telepon,
-        email,
-        website,
-        logoUrl,
-        namaKepsek,
-        nipKepsek
-      },
-      create: {
-        id: 'single-profile',
-        pemerintah,
-        dinas,
-        namaSekolah,
-        npsn,
-        alamat,
-        telepon,
-        email,
-        website,
-        logoUrl,
-        namaKepsek,
-        nipKepsek
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update Profil Sekolah
+      const profil = await tx.profilSekolah.upsert({
+        where: { id: 'single-profile' },
+        update: {
+          pemerintah,
+          dinas,
+          namaSekolah,
+          npsn,
+          alamat,
+          telepon,
+          email,
+          website,
+          logoUrl,
+          namaKepsek,
+          nipKepsek
+        },
+        create: {
+          id: 'single-profile',
+          pemerintah,
+          dinas,
+          namaSekolah,
+          npsn,
+          alamat,
+          telepon,
+          email,
+          website,
+          logoUrl,
+          namaKepsek,
+          nipKepsek
+        }
+      });
+
+      // 2. Update Tahun Ajaran Aktif jika ada
+      if (tahunAjaranAktif) {
+        const trimmedTA = tahunAjaranAktif.trim();
+        let ta = await tx.tahunAjaran.findFirst({
+          where: { tahun: trimmedTA }
+        });
+
+        if (!ta) {
+          ta = await tx.tahunAjaran.create({
+            data: {
+              tahun: trimmedTA,
+              aktif: true
+            }
+          });
+        }
+
+        // Matikan keaktifan tahun ajaran lain
+        await tx.tahunAjaran.updateMany({
+          where: {
+            NOT: { id: ta.id }
+          },
+          data: {
+            aktif: false
+          }
+        });
+
+        // Nyalakan keaktifan tahun ajaran target
+        await tx.tahunAjaran.update({
+          where: { id: ta.id },
+          data: { aktif: true }
+        });
       }
+
+      return profil;
     });
 
-    return NextResponse.json(profil);
+    const activeTA = await prisma.tahunAjaran.findFirst({
+      where: { aktif: true }
+    });
+
+    return NextResponse.json({
+      ...result,
+      tahunAjaranAktif: activeTA ? activeTA.tahun : ''
+    });
   } catch (error) {
     console.error('Update profil error:', error);
     return NextResponse.json({ message: 'Gagal menyimpan profil sekolah' }, { status: 500 });
   }
 }
+

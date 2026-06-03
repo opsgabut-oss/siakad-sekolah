@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, X, Loader2, User, Phone, Upload, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Loader2, User, Phone, Upload, AlertCircle, RefreshCw, Download } from 'lucide-react';
+
 
 interface Siswa {
   id: string;
@@ -266,7 +267,15 @@ export default function AdminSiswaPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Manajemen Data Siswa</h1>
           <p className="text-slate-400 mt-1 text-sm">Kelola data siswa dan import data massal lewat file CSV.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
+          <a
+            href="/api/admin/siswa/export"
+            target="_blank"
+            className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-emerald-400 hover:text-emerald-350 border border-slate-800 hover:border-slate-700 rounded-2xl text-xs font-semibold shadow-lg transition-all duration-200 flex items-center gap-2 cursor-pointer select-none"
+          >
+            <Download size={16} />
+            Ekspor Data Siswa (Excel)
+          </a>
           <button
             onClick={handleOpenImport}
             className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-slate-700 rounded-2xl text-xs font-semibold shadow-lg transition-all duration-200 flex items-center gap-2 cursor-pointer select-none"
@@ -282,6 +291,7 @@ export default function AdminSiswaPage() {
             Tambah Siswa Baru
           </button>
         </div>
+
       </div>
 
       {/* Filter Pencarian */}
@@ -531,16 +541,17 @@ export default function AdminSiswaPage() {
               <div className="bg-slate-950/50 border border-slate-800 p-4 rounded-2xl space-y-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
                   <AlertCircle size={14} />
-                  Aturan & Contoh Format File (CSV)
+                  Aturan & Contoh Format File (CSV / Excel)
                 </h4>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Gunakan format CSV dengan koma (,) sebagai pembatas kolom. Header baris pertama wajib berisi kolom:
+                  Gunakan format CSV dengan koma (`,`) atau titik-koma (`;`) sebagai pembatas kolom. Header baris pertama wajib berisi kolom:
                   <code className="mx-1 px-1 bg-slate-900 text-indigo-300 font-mono text-[10px] border border-slate-800 rounded">nisn, nama, kelas, kontak orang tua</code>
                 </p>
                 <pre className="p-2.5 bg-slate-950 border border-slate-900 rounded-lg text-[10px] font-mono text-emerald-400 overflow-x-auto select-all">
-                  {"nisn,nama,kelas,kontak orang tua\n1234567890,Rian Hidayat,Kelas X-A,085222333444\n0987654321,Laras Ati,Kelas X-A,081333444555"}
+                  {"nisn;nama;kelas;kontak orang tua\n1234567890;Rian Hidayat;Kelas 6;085222333444\n0987654321;Laras Ati;Kelas 6;081333444555"}
                 </pre>
               </div>
+
 
               {/* Upload File Input */}
               <div className="space-y-2">

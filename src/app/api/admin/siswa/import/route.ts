@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser();
@@ -21,8 +22,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'CSV tidak memiliki data baris' }, { status: 400 });
     }
 
+    // Deteksi pembatas kolom secara dinamis (koma atau titik-koma)
+    let delimiter = ',';
+    if (lines[0].includes(';')) {
+      delimiter = ';';
+    }
+
     // Validasi Header (nisn, nama, kelas, kontak orang tua)
-    const headers = lines[0].split(',').map((h: string) => h.trim().toLowerCase());
+    const headers = lines[0].split(delimiter).map((h: string) => h.trim().toLowerCase());
     
     const nisnIdx = headers.indexOf('nisn');
     const namaIdx = headers.indexOf('nama');
@@ -54,6 +61,10 @@ export async function POST(request: Request) {
     });
     classes.forEach(c => allClassMap.set(c.nama.toLowerCase().trim(), c.id));
 
+    // Pre-hash passwords once to avoid high CPU usage during loop
+    const studentPasswordHash = await bcrypt.hash('siswa123', 10);
+    const parentPasswordHash = await bcrypt.hash('ortu123', 10);
+
     let importedCount = 0;
     let skippedCount = 0;
     const errors: string[] = [];
@@ -61,7 +72,7 @@ export async function POST(request: Request) {
     // Olah data baris demi baris
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      const cells = line.split(',').map((c: string) => c.trim().replace(/^["']|["']$/g, ''));
+      const cells = line.split(delimiter).map((c: string) => c.trim().replace(/^["']|["']$/g, ''));
       
       const nisn = cells[nisnIdx];
       const nama = cells[namaIdx];
@@ -105,15 +116,39 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // Simpan siswa
-        await prisma.siswa.create({
-          data: {
-            nisn,
-            nama,
-            kelasId,
-            kontakOrangTua: kontak
-          }
+        // Simpan siswa & User logins secara transaksional
+        await prisma.$transaction(async (tx) => {
+          // 1. Buat User Siswa
+          const studentUser = await tx.user.create({
+            data: {
+              username: `siswa.${nisn}`,
+              password: studentPasswordHash,
+              role: 'SISWA'
+            }
+          });
+
+          // 2. Buat User Orang Tua
+          const parentUser = await tx.user.create({
+            data: {
+              username: `ortu.${nisn}`,
+              password: parentPasswordHash,
+              role: 'ORANG_TUA'
+            }
+          });
+
+          // 3. Simpan data Siswa yang terhubung
+          await tx.siswa.create({
+            data: {
+              nisn,
+              nama,
+              kelasId,
+              kontakOrangTua: kontak,
+              userId: studentUser.id,
+              orangTuaUserId: parentUser.id
+            }
+          });
         });
+
         importedCount++;
       } catch (err) {
         errors.push(`Baris ${i + 1}: Gagal menyimpan ke database.`);

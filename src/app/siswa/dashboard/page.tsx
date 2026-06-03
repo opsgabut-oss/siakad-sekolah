@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, Calendar, BookOpen, Clock, Award, ShieldCheck, CheckCircle2, FileText, User } from 'lucide-react';
+import { RefreshCw, Calendar, BookOpen, Clock, Award, AlertCircle, CheckCircle2, FileText, User } from 'lucide-react';
 
 interface SiswaData {
   nisn: string;
@@ -145,7 +145,7 @@ export default function SiswaDashboard() {
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <ShieldCheck size={14} />
+          <AlertCircle size={14} />
           Kehadiran
         </button>
         <button

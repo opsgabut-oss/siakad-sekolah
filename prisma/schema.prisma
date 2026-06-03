@@ -1,0 +1,86 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  GURU
+  SISWA
+  ORANG_TUA
+}
+
+enum StatusAbsensi {
+  HADIR
+  IZIN
+  SAKIT
+  ALPA
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  guru      Guru?
+  siswa     Siswa?
+}
+
+model TahunAjaran {
+  id      String   @id @default(uuid())
+  tahun   String   // e.g. "2025/2026"
+  aktif   Boolean  @default(false)
+  kelas   Kelas[]
+}
+
+model Kelas {
+  id            String      @id @default(uuid())
+  nama          String      // e.g. "Kelas 10-A"
+  tahunAjaranId String
+  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
+  siswa         Siswa[]
+}
+
+model Guru {
+  id       String   @id @default(uuid())
+  nuptk    String   @unique // 16 digit
+  nama     String
+  kontak   String
+  userId   String?  @unique
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  absensi  Absensi[]
+}
+
+model Siswa {
+  id             String    @id @default(uuid())
+  nisn           String    @unique // 10 digit
+  nama           String
+  kelasId        String
+  kelas          Kelas     @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  kontakOrangTua String
+  userId         String?   @unique
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  absensi        Absensi[]
+}
+
+model Absensi {
+  id            String        @id @default(uuid())
+  siswaId       String
+  siswa         Siswa         @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  tanggal       DateTime      @db.Date
+  status        StatusAbsensi
+  diabsenOlehId String
+  diabsenOleh   Guru          @relation(fields: [diabsenOlehId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([siswaId, tanggal])
+}

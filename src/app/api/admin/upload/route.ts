@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import fs from 'fs';
 import path from 'path';
-import { isGDriveConfigured, uploadToGoogleDrive } from '@/lib/gdrive';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +14,6 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const kategori = (formData.get('kategori') as string) || 'LAINNYA';
 
     if (!file) {
       return NextResponse.json({ message: 'Berkas tidak ditemukan' }, { status: 400 });
@@ -40,42 +38,10 @@ export async function POST(request: NextRequest) {
     fs.writeFileSync(localFilePath, buffer);
     const localUrl = `/uploads/${fileName}`;
 
-    let driveUrl = null;
-    let driveError = null;
-
-    // 3. Upload to Google Drive if configured
-    if (isGDriveConfigured()) {
-      try {
-        // Map category ID to readable folder name in Drive
-        const categoryMap: { [key: string]: string } = {
-          SURAT_MASUK: 'Surat Masuk',
-          SURAT_KELUAR: 'Surat Keluar',
-          RAPOR: 'Rapor',
-          IJAZAH: 'Ijazah',
-          DOKUMEN_GURU: 'Dokumen Guru',
-          LAINNYA: 'Lainnya',
-        };
-        const folderName = categoryMap[kategori] || 'Lainnya';
-
-        const uploadResult = await uploadToGoogleDrive(
-          file.name,
-          file.type || 'application/octet-stream',
-          buffer,
-          folderName
-        );
-        driveUrl = uploadResult.webViewLink;
-      } catch (err: any) {
-        console.error('Google Drive Upload Error:', err);
-        driveError = err.message || 'Error occurred during Google Drive upload';
-      }
-    }
-
     return NextResponse.json({
       success: true,
       localUrl,
-      driveUrl,
-      tautanBerkas: driveUrl || localUrl,
-      driveError,
+      tautanBerkas: localUrl,
     });
   } catch (error: any) {
     console.error('File upload general error:', error);

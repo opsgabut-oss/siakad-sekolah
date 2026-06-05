@@ -352,15 +352,25 @@ export default function AdminSuratPage() {
                       </td>
                       <td className="px-6 py-4">
                         {surat.tautanBerkas ? (
-                          <a
-                            href={surat.tautanBerkas}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-950 border border-slate-800 text-indigo-400 hover:text-indigo-300 rounded-lg text-xs font-semibold select-none cursor-pointer"
-                          >
-                            <LinkIcon size={12} />
-                            Lihat Berkas
-                          </a>
+                          <div className="flex gap-2">
+                            <a
+                              href={surat.tautanBerkas}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-950 border border-slate-800 text-indigo-400 hover:text-indigo-300 rounded-lg text-xs font-semibold select-none cursor-pointer"
+                            >
+                              <LinkIcon size={12} />
+                              Lihat
+                            </a>
+                            <a
+                              href={surat.tautanBerkas}
+                              download
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-950 border border-slate-800 text-emerald-400 hover:text-emerald-300 rounded-lg text-xs font-semibold select-none cursor-pointer"
+                            >
+                              <Download size={12} />
+                              Unduh
+                            </a>
+                          </div>
                         ) : (
                           <span className="text-xs text-slate-600 italic">No File</span>
                         )}

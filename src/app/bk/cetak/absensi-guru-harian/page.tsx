@@ -150,8 +150,7 @@ export default async function DailyTeacherAttendancePrintPage({ searchParams }: 
         <thead>
           <tr className="bg-slate-100 border-b border-black text-[10px] uppercase font-bold">
             <th className="p-2 border-r border-black text-center w-8">No</th>
-            <th className="p-2 border-r border-black w-48">Nama Guru / Staf</th>
-            <th className="p-2 border-r border-black w-32">NIP/NIK</th>
+            <th className="p-2 border-r border-black w-64">Nama Guru / Staf</th>
             <th className="p-2 border-r border-black w-36">Pangkat / Golongan</th>
             <th className="p-2 border-r border-black text-center w-16">Status</th>
             <th className="p-2 border-r border-black text-center w-16">Datang</th>
@@ -165,8 +164,12 @@ export default async function DailyTeacherAttendancePrintPage({ searchParams }: 
           {rows.map((row) => (
             <tr key={row.no} className="border-b border-black/40 text-[10px] h-12">
               <td className="p-2 border-r border-black text-center">{row.no}</td>
-              <td className="p-2 border-r border-black font-semibold">{row.nama}</td>
-              <td className="p-2 border-r border-black font-mono text-[9px]">{row.nip !== '-' ? row.nip : row.nik}</td>
+              <td className="p-2 border-r border-black font-semibold">
+                <div>{row.nama}</div>
+                {row.nip && row.nip !== '-' && (
+                  <div className="text-[9px] text-slate-500 font-mono font-normal mt-0.5">NIP. {row.nip}</div>
+                )}
+              </td>
               <td className="p-2 border-r border-black">
                 {row.pangkat !== '-' || row.golongan !== '-' ? (
                   <span>

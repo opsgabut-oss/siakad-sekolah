@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import Link from 'next/link';
 import { Users, GraduationCap, LayoutDashboard, LogOut, ShieldAlert, BookOpen, Calendar, FileSpreadsheet, School, FolderOpen, Settings } from 'lucide-react';
+import { prisma } from '@/lib/db';
 
 export default async function AdminLayout({
   children,
@@ -15,19 +16,27 @@ export default async function AdminLayout({
     redirect('/login');
   }
 
+  const profil = await prisma.profilSekolah.findFirst();
+
   return (
-    <div className="flex-1 min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
+    <div className="flex-1 min-h-screen bg-slate-955 text-slate-105 flex flex-col md:flex-row">
       {/* Sidebar Navigasi */}
       <aside className="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between shrink-0">
         <div>
           {/* Logo Brand */}
           <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-indigo-500 to-violet-600 flex items-center justify-center font-bold text-lg text-white shadow-md shadow-indigo-500/10">
-              SK
-            </div>
-            <div>
-              <h2 className="font-extrabold text-white text-md tracking-wide">SIAKAD ADMIN</h2>
-              <p className="text-xs text-slate-500 font-medium">Fase 2: Portal & Laporan</p>
+            {profil?.logoSekolahUrl ? (
+              <img src={profil.logoSekolahUrl} alt="Logo" className="w-10 h-10 rounded-xl object-contain bg-slate-950/20" />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-indigo-500 to-violet-600 flex items-center justify-center font-bold text-lg text-white shadow-md shadow-indigo-500/10 shrink-0">
+                SK
+              </div>
+            )}
+            <div className="overflow-hidden">
+              <h2 className="font-extrabold text-white text-sm tracking-wide uppercase truncate max-w-[140px]" title={profil?.namaSekolah || 'SIAKAD ADMIN'}>
+                {profil?.namaSekolah || 'SIAKAD ADMIN'}
+              </h2>
+              <p className="text-[10px] text-slate-500 font-medium">Portal Admin</p>
             </div>
           </div>
 
@@ -109,7 +118,7 @@ export default async function AdminLayout({
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
             >
               <FolderOpen size={18} />
-              Arsip Surat
+              Arsip Dokumen
             </Link>
             <Link
               href="/admin/profil"

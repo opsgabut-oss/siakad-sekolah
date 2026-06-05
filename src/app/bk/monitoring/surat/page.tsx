@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FolderOpen, Search, X, Loader2, Calendar, FileText, Link as LinkIcon, Download } from 'lucide-react';
+import { FolderOpen, Search, X, Loader2, Link as LinkIcon } from 'lucide-react';
 
 interface ArsipSurat {
   id: string;
@@ -14,32 +14,42 @@ interface ArsipSurat {
   jenis: 'MASUK' | 'KELUAR';
   tautanBerkas: string | null;
   keterangan: string | null;
+  kategori: string;
 }
+
+const CATEGORY_LABELS: { [key: string]: { label: string; style: string } } = {
+  SURAT_MASUK: { label: 'Surat Masuk', style: 'bg-emerald-950/50 border border-emerald-800/60 text-emerald-400' },
+  SURAT_KELUAR: { label: 'Surat Keluar', style: 'bg-indigo-950/50 border border-indigo-800/60 text-indigo-400' },
+  RAPOR: { label: 'Rapor', style: 'bg-rose-950/50 border border-rose-800/60 text-rose-400' },
+  IJAZAH: { label: 'Ijazah', style: 'bg-amber-950/50 border border-amber-800/60 text-amber-455' },
+  DOKUMEN_GURU: { label: 'Dokumen Guru', style: 'bg-violet-950/50 border border-violet-800/60 text-violet-400' },
+  LAINNYA: { label: 'Lainnya', style: 'bg-slate-950/50 border border-slate-800/60 text-slate-400' },
+};
 
 export default function KepsekSuratMonitoringPage() {
   const [suratList, setSuratList] = useState<ArsipSurat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedJenisTab, setSelectedJenisTab] = useState<'SEMUA' | 'MASUK' | 'KELUAR'>('SEMUA');
+  const [selectedKategoriTab, setSelectedKategoriTab] = useState<string>('SEMUA');
 
   useEffect(() => {
     fetchSurat();
-  }, [selectedJenisTab, searchTerm]);
+  }, [selectedKategoriTab, searchTerm]);
 
   const fetchSurat = async () => {
     setLoading(true);
     setError('');
     try {
       let url = '/api/admin/surat?';
-      if (selectedJenisTab !== 'SEMUA') {
-        url += `jenis=${selectedJenisTab}&`;
+      if (selectedKategoriTab !== 'SEMUA') {
+        url += `kategori=${selectedKategoriTab}&`;
       }
       if (searchTerm) {
         url += `search=${encodeURIComponent(searchTerm)}&`;
       }
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Gagal memuat arsip surat');
+      if (!res.ok) throw new Error('Gagal memuat arsip dokumen');
       const data = await res.json();
       setSuratList(data);
     } catch (err: any) {
@@ -55,10 +65,10 @@ export default function KepsekSuratMonitoringPage() {
       <div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
           <FolderOpen className="text-violet-400" />
-          Monitoring Arsip Surat Digital
+          Monitoring Arsip Dokumen Digital
         </h1>
         <p className="text-slate-400 mt-1 text-sm">
-          Supervisi arsip surat masuk dan surat keluar sekolah secara terstruktur.
+          Supervisi arsip surat, rapor, ijazah, serta dokumen sekolah lainnya.
         </p>
       </div>
 
@@ -69,40 +79,32 @@ export default function KepsekSuratMonitoringPage() {
       )}
 
       {/* Filter Tabs & Search Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-        
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-4">
         {/* Tab Filters */}
-        <div className="flex bg-slate-950/80 p-1 rounded-2xl border border-slate-850 w-full md:w-auto">
+        <div className="flex flex-wrap gap-1.5 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-850">
           <button
-            onClick={() => setSelectedJenisTab('SEMUA')}
-            className={`flex-1 md:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              selectedJenisTab === 'SEMUA'
+            onClick={() => setSelectedKategoriTab('SEMUA')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              selectedKategoriTab === 'SEMUA'
                 ? 'bg-slate-800 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Semua Surat
+            Semua
           </button>
-          <button
-            onClick={() => setSelectedJenisTab('MASUK')}
-            className={`flex-1 md:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              selectedJenisTab === 'MASUK'
-                ? 'bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 shadow-md'
-                : 'text-slate-400 hover:text-slate-250'
-            }`}
-          >
-            Surat Masuk
-          </button>
-          <button
-            onClick={() => setSelectedJenisTab('KELUAR')}
-            className={`flex-1 md:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              selectedJenisTab === 'KELUAR'
-                ? 'bg-violet-950/60 border border-violet-800/40 text-violet-400 shadow-md'
-                : 'text-slate-400 hover:text-slate-250'
-            }`}
-          >
-            Surat Keluar
-          </button>
+          {Object.entries(CATEGORY_LABELS).map(([key, item]) => (
+            <button
+              key={key}
+              onClick={() => setSelectedKategoriTab(key)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                selectedKategoriTab === key
+                  ? 'bg-violet-950/60 border border-violet-850/55 text-violet-300 shadow-md'
+                  : 'text-slate-400 hover:text-slate-250'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
 
         {/* Search */}
@@ -128,74 +130,73 @@ export default function KepsekSuratMonitoringPage() {
         {loading ? (
           <div className="flex items-center justify-center p-12 text-slate-400 gap-3">
             <Loader2 className="animate-spin" size={24} />
-            Memuat arsip surat...
+            Memuat arsip dokumen...
           </div>
         ) : suratList.length === 0 ? (
           <div className="text-center p-12 text-slate-500 text-sm">
-            Tidak ada dokumen surat ditemukan.
+            Tidak ada dokumen ditemukan.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-800/80 bg-slate-950/20 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                  <th className="px-6 py-4">Jenis & No. Surat</th>
-                  <th className="px-6 py-4">Perihal</th>
+                  <th className="px-6 py-4">Kategori & No. Dokumen</th>
+                  <th className="px-6 py-4">Perihal / Judul</th>
                   <th className="px-6 py-4">Asal / Penerima</th>
                   <th className="px-6 py-4">Tanggal Dokumen</th>
                   <th className="px-6 py-4">Berkas</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50 text-slate-300 text-sm">
-                {suratList.map((surat) => (
-                  <tr key={surat.id} className="hover:bg-slate-800/10 transition-colors">
-                    <td className="px-6 py-4 space-y-1">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                        surat.jenis === 'MASUK'
-                          ? 'bg-emerald-950/50 border border-emerald-800/60 text-emerald-400'
-                          : 'bg-violet-950/50 border border-violet-800/60 text-violet-405'
-                      }`}>
-                        {surat.jenis === 'MASUK' ? 'Masuk' : 'Keluar'}
-                      </span>
-                      <h4 className="font-mono text-xs font-bold text-slate-200">{surat.nomorSurat}</h4>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-slate-100">{surat.perihal}</p>
-                      {surat.keterangan && (
-                        <p className="text-[10px] text-slate-500 truncate max-w-xs">{surat.keterangan}</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 space-y-0.5 text-xs">
-                      <p><span className="text-slate-500">Pengirim:</span> <strong className="text-slate-300">{surat.pengirim}</strong></p>
-                      <p><span className="text-slate-500">Penerima:</span> <strong className="text-slate-300">{surat.penerima}</strong></p>
-                    </td>
-                    <td className="px-6 py-4 text-xs font-medium space-y-0.5">
-                      <p className="text-slate-300">
-                        {new Date(surat.tanggalSurat).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                      {surat.jenis === 'MASUK' && surat.tanggalDiterima && (
-                        <p className="text-[9px] text-slate-500 font-bold uppercase">
-                          Diterima: {new Date(surat.tanggalDiterima).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                {suratList.map((surat) => {
+                  const cat = CATEGORY_LABELS[surat.kategori] || CATEGORY_LABELS.LAINNYA;
+                  return (
+                    <tr key={surat.id} className="hover:bg-slate-800/10 transition-colors">
+                      <td className="px-6 py-4 space-y-1.5">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${cat.style}`}>
+                          {cat.label}
+                        </span>
+                        <h4 className="font-mono text-xs font-bold text-slate-200">{surat.nomorSurat}</h4>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-slate-100">{surat.perihal}</p>
+                        {surat.keterangan && (
+                          <p className="text-[10px] text-slate-500 truncate max-w-xs">{surat.keterangan}</p>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 space-y-0.5 text-xs">
+                        <p><span className="text-slate-500">Pengirim/Asal:</span> <strong className="text-slate-300">{surat.pengirim || '-'}</strong></p>
+                        <p><span className="text-slate-500">Penerima/Tujuan:</span> <strong className="text-slate-300">{surat.penerima || '-'}</strong></p>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-medium space-y-0.5">
+                        <p className="text-slate-300">
+                          {new Date(surat.tanggalSurat).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {surat.tautanBerkas ? (
-                        <a
-                          href={surat.tautanBerkas}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-955 border border-slate-800 text-violet-400 hover:text-violet-300 rounded-lg text-xs font-semibold select-none cursor-pointer"
-                        >
-                          <LinkIcon size={12} />
-                          Lihat Berkas
-                        </a>
-                      ) : (
-                        <span className="text-xs text-slate-600 italic">No File</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                        {surat.jenis === 'MASUK' && surat.tanggalDiterima && (
+                          <p className="text-[9px] text-slate-500 font-bold uppercase">
+                            Diterima: {new Date(surat.tanggalDiterima).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {surat.tautanBerkas ? (
+                          <a
+                            href={surat.tautanBerkas}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-950 border border-slate-800 text-violet-400 hover:text-violet-300 rounded-lg text-xs font-semibold select-none cursor-pointer"
+                          >
+                            <LinkIcon size={12} />
+                            Lihat Berkas
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-600 italic">No File</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

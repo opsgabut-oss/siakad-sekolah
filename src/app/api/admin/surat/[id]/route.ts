@@ -14,42 +14,82 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { nomorSurat, tanggalSurat, tanggalDiterima, pengirim, penerima, perihal, jenis, tautanBerkas, keterangan } = await request.json();
+    const {
+      nomorSurat,
+      tanggalSurat,
+      tanggalDiterima,
+      pengirim,
+      penerima,
+      perihal,
+      jenis,
+      tautanBerkas,
+      keterangan,
+      kategori,
+    } = await request.json();
 
-    if (!nomorSurat || !tanggalSurat || !pengirim || !penerima || !perihal || !jenis) {
-      return NextResponse.json({ message: 'Kolom utama wajib diisi' }, { status: 400 });
+    if (!tanggalSurat || !perihal) {
+      return NextResponse.json({ message: 'Tanggal dan Perihal wajib diisi' }, { status: 400 });
     }
 
-    const existingSurat = await prisma.arsipSurat.findFirst({
-      where: {
-        nomorSurat,
-        NOT: { id },
-      },
-    });
+    // Default values for missing properties
+    const finalPengirim = pengirim || '-';
+    const finalPenerima = penerima || '-';
+    const finalJenis = (jenis as JenisSurat) || JenisSurat.MASUK;
+    const finalKategori = kategori || 'SURAT_MASUK';
 
-    if (existingSurat) {
-      return NextResponse.json({ message: 'Nomor surat sudah digunakan oleh surat lain' }, { status: 400 });
+    // Auto-generate nomorSurat if blank/null
+    let finalNomorSurat = nomorSurat?.trim();
+    if (!finalNomorSurat) {
+      let isUnique = false;
+      while (!isUnique) {
+        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const randomStr = Math.floor(1000 + Math.random() * 9000).toString();
+        finalNomorSurat = `ARC-${todayStr}-${randomStr}`;
+
+        const exists = await prisma.arsipSurat.findFirst({
+          where: {
+            nomorSurat: finalNomorSurat,
+            NOT: { id },
+          },
+        });
+        if (!exists) {
+          isUnique = true;
+        }
+      }
+    } else {
+      // Check unique nomorSurat if manually supplied (excluding current record)
+      const existingSurat = await prisma.arsipSurat.findFirst({
+        where: {
+          nomorSurat: finalNomorSurat,
+          NOT: { id },
+        },
+      });
+
+      if (existingSurat) {
+        return NextResponse.json({ message: 'Nomor surat/dokumen sudah digunakan oleh dokumen lain' }, { status: 400 });
+      }
     }
 
     const updatedSurat = await prisma.arsipSurat.update({
       where: { id },
       data: {
-        nomorSurat,
+        nomorSurat: finalNomorSurat,
         tanggalSurat: new Date(tanggalSurat),
         tanggalDiterima: tanggalDiterima ? new Date(tanggalDiterima) : null,
-        pengirim,
-        penerima,
+        pengirim: finalPengirim,
+        penerima: finalPenerima,
         perihal,
-        jenis: jenis as JenisSurat,
+        jenis: finalJenis,
         tautanBerkas,
         keterangan,
+        kategori: finalKategori,
       },
     });
 
     return NextResponse.json(updatedSurat);
   } catch (error) {
     console.error('Update surat error:', error);
-    return NextResponse.json({ message: 'Gagal memperbarui data surat' }, { status: 500 });
+    return NextResponse.json({ message: 'Gagal memperbarui data surat/dokumen' }, { status: 500 });
   }
 }
 
@@ -65,9 +105,9 @@ export async function DELETE(
   try {
     const { id } = await params;
     await prisma.arsipSurat.delete({ where: { id } });
-    return NextResponse.json({ message: 'Arsip surat berhasil dihapus' });
+    return NextResponse.json({ message: 'Arsip surat/dokumen berhasil dihapus' });
   } catch (error) {
     console.error('Delete surat error:', error);
-    return NextResponse.json({ message: 'Gagal menghapus arsip surat' }, { status: 500 });
+    return NextResponse.json({ message: 'Gagal menghapus arsip surat/dokumen' }, { status: 500 });
   }
 }

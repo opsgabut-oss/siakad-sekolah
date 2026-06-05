@@ -18,9 +18,7 @@ const getLastWorkingDayOfMonth = (bulanStr: string) => {
   let date = new Date(year, month, 0);
   
   const day = date.getDay();
-  if (day === 0) { // Sunday -> Friday
-    date.setDate(date.getDate() - 2);
-  } else if (day === 6) { // Saturday -> Friday
+  if (day === 0) { // Sunday -> Saturday
     date.setDate(date.getDate() - 1);
   }
   
@@ -80,7 +78,7 @@ export default async function MonthlyTeacherAttendancePrintPage({ searchParams }
   for (let d = 1; d <= daysInMonth; d++) {
     const currentDate = new Date(year, month, d);
     const dayName = currentDate.toLocaleDateString('id-ID', { weekday: 'long' });
-    const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+    const isWeekend = currentDate.getDay() === 0;
 
     // Cari record untuk tanggal ini secara timezone-safe
     const record = absensiRecords.find((r) => {
@@ -119,7 +117,7 @@ export default async function MonthlyTeacherAttendancePrintPage({ searchParams }
   let totalHariKerja = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const currentDate = new Date(year, month, d);
-    if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+    if (currentDate.getDay() !== 0) {
       totalHariKerja++;
     }
   }
@@ -194,7 +192,9 @@ export default async function MonthlyTeacherAttendancePrintPage({ searchParams }
       <div className="mt-4 grid grid-cols-2 text-xs gap-4 border border-black p-3 bg-slate-50">
         <div className="space-y-1">
           <p>Nama Lengkap: <strong>{guru.nama}</strong></p>
-          <p>NIP/NIK: <strong>{guru.nip || guru.nik || '-'}</strong></p>
+          {guru.nip && (
+            <p>NIP: <strong>{guru.nip}</strong></p>
+          )}
           <p>Pangkat/Golongan: <strong>{guru.pangkat || '-'} {guru.golongan ? `(${guru.golongan})` : ''}</strong></p>
         </div>
         <div className="space-y-1 text-right">

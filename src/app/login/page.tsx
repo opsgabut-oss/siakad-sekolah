@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
 
@@ -11,6 +11,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<{ namaSekolah: string; logoSekolahUrl: string | null } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/public/profile')
+      .then((res) => res.json())
+      .then((data) => setProfile(data))
+      .catch((err) => console.error('Failed to load school profile', err));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,11 +74,17 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:border-slate-700/50">
         
         {/* Header App */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-tr from-indigo-500 to-violet-600 text-white font-bold text-2xl shadow-lg shadow-indigo-500/20 mb-4 select-none">
-            SK
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">SIAKAD</h1>
+        <div className="text-center mb-8 flex flex-col items-center justify-center">
+          {profile?.logoSekolahUrl ? (
+            <img src={profile.logoSekolahUrl} alt="Logo" className="w-16 h-16 rounded-2xl object-contain bg-slate-950/20 mb-4" />
+          ) : (
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-tr from-indigo-500 to-violet-600 text-white font-bold text-2xl shadow-lg shadow-indigo-500/20 mb-4 select-none">
+              SK
+            </div>
+          )}
+          <h1 className="text-2xl font-extrabold tracking-tight text-white uppercase truncate max-w-full px-2" title={profile?.namaSekolah || 'SIAKAD'}>
+            {profile?.namaSekolah || 'SIAKAD'}
+          </h1>
           <p className="text-slate-400 mt-2 text-sm">Sistem Informasi Akademik Sekolah</p>
         </div>
 

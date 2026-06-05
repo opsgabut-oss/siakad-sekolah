@@ -34,9 +34,7 @@ const getLastWorkingDayOfMonth = (bulanStr: string) => {
   let date = new Date(year, month, 0);
   
   const day = date.getDay();
-  if (day === 0) { // Sunday -> Friday
-    date.setDate(date.getDate() - 2);
-  } else if (day === 6) { // Saturday -> Friday
+  if (day === 0) { // Sunday -> Saturday
     date.setDate(date.getDate() - 1);
   }
   
@@ -232,7 +230,7 @@ export default function BKMonitoringAbsensiPage() {
           body, html { background-color: white !important; color: black !important; }
           aside, nav, header, footer, button, .no-print, [class*="no-print"] { display: none !important; }
           main, .flex-1, div[class*="flex-1"], div[class*="max-w-7xl"] { display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
-          .print-header { display: block !important; color: black !important; }
+          .print-header { display: flex !important; align-items: center; justify-content: center; color: black !important; position: relative; }
           .print-table { border: 1px solid black !important; color: black !important; width: 100% !important; }
           .print-table th, .print-table td { border: 1px solid black !important; color: black !important; padding: 8px !important; }
         }
@@ -240,7 +238,7 @@ export default function BKMonitoringAbsensiPage() {
 
       <div className="hidden print-header text-center space-y-2 mb-6 text-black relative flex items-center justify-center min-h-[80px] border-b-2 border-black pb-4">
         {isValidImageUrl(profil?.logoPemdaUrl) && (
-          <img src={profil.logoPemdaUrl} alt="Logo Pemda" className="w-14 h-14 absolute left-0 object-contain print:block animate-fade-in" />
+          <img src={profil.logoPemdaUrl} alt="Logo Pemda" className="w-14 h-14 absolute left-0 top-1/2 -translate-y-1/2 object-contain print:block animate-fade-in" />
         )}
         <div className={`flex-1 text-center ${isValidImageUrl(profil?.logoPemdaUrl) ? 'pl-16' : ''} ${isValidImageUrl(profil?.logoSekolahUrl) ? 'pr-16' : ''}`}>
           <h2 className="text-[10px] font-bold uppercase tracking-wider leading-none">{profil?.pemerintah || 'Pemerintah Kabupaten Pati'}</h2>
@@ -250,7 +248,7 @@ export default function BKMonitoringAbsensiPage() {
           <p className="text-[9px] text-slate-500 font-bold uppercase">Dicetak pada tanggal: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
         {isValidImageUrl(profil?.logoSekolahUrl) && (
-          <img src={profil.logoSekolahUrl} alt="Logo Sekolah" className="w-14 h-14 absolute right-0 object-contain print:block animate-fade-in" />
+          <img src={profil.logoSekolahUrl} alt="Logo Sekolah" className="w-14 h-14 absolute right-0 top-1/2 -translate-y-1/2 object-contain print:block animate-fade-in" />
         )}
       </div>
 
@@ -413,8 +411,7 @@ export default function BKMonitoringAbsensiPage() {
                 <thead>
                   <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400">
                     <th className="p-4 text-xs font-semibold uppercase">No</th>
-                    <th className="p-4 text-xs font-semibold uppercase">Nama</th>
-                    <th className="p-4 text-xs font-semibold uppercase">NIP/NIK</th>
+                    <th className="p-4 text-xs font-semibold uppercase">Nama / NIP</th>
                     <th className="p-4 text-xs font-semibold uppercase">Pangkat / Golongan</th>
                     <th className="p-4 text-xs font-semibold uppercase text-center">Hadir</th>
                     <th className="p-4 text-xs font-semibold uppercase text-center">Izin</th>
@@ -429,8 +426,12 @@ export default function BKMonitoringAbsensiPage() {
                   {guruLaporanRows.map((row, index) => (
                     <tr key={row.guruId} className="border-t border-slate-800">
                       <td className="p-4 text-sm">{index + 1}</td>
-                      <td className="p-4 text-sm font-bold">{row.nama}</td>
-                      <td className="p-4 text-sm">{row.nip !== '-' ? row.nip : row.nik}</td>
+                      <td className="p-4 text-sm font-bold">
+                        <div>{row.nama}</div>
+                        {row.nip && row.nip !== '-' && (
+                          <div className="text-xs text-slate-400 font-mono font-normal mt-0.5">NIP. {row.nip}</div>
+                        )}
+                      </td>
                       <td className="p-4 text-sm text-slate-300">
                         {row.pangkat !== '-' || row.golongan !== '-' ? (
                           <span>

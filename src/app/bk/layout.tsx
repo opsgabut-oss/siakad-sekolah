@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import ClientLogoutButton from '../admin/LogoutButton';
 import BKLayoutWrapper from './BKLayoutWrapper';
+import { prisma } from '@/lib/db';
 
 export default async function BKLayout({
   children,
@@ -30,17 +31,24 @@ export default async function BKLayout({
   }
 
   const isKepsek = user.role === 'KEPALA_SEKOLAH';
+  const profil = await prisma.profilSekolah.findFirst();
 
   const sidebar = (
     <aside className="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between shrink-0 no-print">
       <div>
         {/* Logo Brand */}
         <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-violet-500 to-indigo-600 flex items-center justify-center font-bold text-lg text-white shadow-md shadow-violet-500/10">
-            BK
-          </div>
-          <div>
-            <h2 className="font-extrabold text-white text-md tracking-wide">SIAKAD BK</h2>
+          {profil?.logoSekolahUrl ? (
+            <img src={profil.logoSekolahUrl} alt="Logo" className="w-10 h-10 rounded-xl object-contain bg-slate-950/20" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-violet-500 to-indigo-600 flex items-center justify-center font-bold text-lg text-white shadow-md shadow-violet-500/10 shrink-0">
+              BK
+            </div>
+          )}
+          <div className="overflow-hidden">
+            <h2 className="font-extrabold text-white text-sm tracking-wide uppercase truncate max-w-[140px]" title={profil?.namaSekolah || 'SIAKAD BK'}>
+              {profil?.namaSekolah || 'SIAKAD BK'}
+            </h2>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
               {isKepsek ? 'Kepala Sekolah' : 'Bimbingan Konseling'}
             </p>
@@ -136,7 +144,7 @@ export default async function BKLayout({
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
               >
                 <FolderOpen size={18} />
-                Monitoring Surat
+                Monitoring Dokumen
               </Link>
             </>
           )}

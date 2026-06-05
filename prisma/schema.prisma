@@ -242,6 +242,7 @@ model ArsipSurat {
   jenis           JenisSurat
   tautanBerkas    String?
   keterangan      String?
+  kategori        String      @default("SURAT_MASUK")
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 }

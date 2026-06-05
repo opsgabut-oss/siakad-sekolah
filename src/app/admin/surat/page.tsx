@@ -416,7 +416,7 @@ export default function AdminSuratPage() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Kategori Dokumen */}
                 <div className="space-y-2 col-span-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase block">Kategori Dokumen</label>
+                  <label className="text-xs font-semibold text-slate-400 uppercase block">Kategori Dokumen</label>
                   <select
                     value={kategori}
                     onChange={(e) => {
@@ -441,7 +441,7 @@ export default function AdminSuratPage() {
 
                 {/* Jenis Surat */}
                 <div className="space-y-2 col-span-1">
-                  <label className="text-xs font-semibold text-slate-350 uppercase block">Jenis Aliran</label>
+                  <label className="text-xs font-semibold text-slate-400 uppercase block">Jenis Aliran</label>
                   <select
                     value={jenis}
                     onChange={(e) => setJenis(e.target.value as 'MASUK' | 'KELUAR')}
@@ -455,7 +455,7 @@ export default function AdminSuratPage() {
 
               {/* Nomor Dokumen */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-355 uppercase block">
+                <label className="text-xs font-semibold text-slate-400 uppercase block">
                   Nomor Surat / Arsip
                 </label>
                 <input
@@ -478,7 +478,7 @@ export default function AdminSuratPage() {
 
               {/* Perihal / Judul */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-355 uppercase block">Perihal / Judul Dokumen</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase block">Perihal / Judul Dokumen</label>
                 <input
                   type="text"
                   value={perihal}
@@ -491,7 +491,7 @@ export default function AdminSuratPage() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Pengirim */}
                 <div className="space-y-2 col-span-1">
-                  <label className="text-xs font-semibold text-slate-355 uppercase block">Pengirim / Asal</label>
+                  <label className="text-xs font-semibold text-slate-400 uppercase block">Pengirim / Asal</label>
                   <input
                     type="text"
                     value={pengirim}
@@ -503,7 +503,7 @@ export default function AdminSuratPage() {
 
                 {/* Penerima */}
                 <div className="space-y-2 col-span-1">
-                  <label className="text-xs font-semibold text-slate-355 uppercase block">Penerima / Tujuan</label>
+                  <label className="text-xs font-semibold text-slate-400 uppercase block">Penerima / Tujuan</label>
                   <input
                     type="text"
                     value={penerima}
@@ -517,7 +517,7 @@ export default function AdminSuratPage() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Tanggal Surat */}
                 <div className="space-y-2 col-span-1">
-                  <label className="text-xs font-semibold text-slate-355 uppercase block">Tanggal Dokumen</label>
+                  <label className="text-xs font-semibold text-slate-400 uppercase block">Tanggal Dokumen</label>
                   <input
                     type="date"
                     value={tanggalSurat}
@@ -528,7 +528,7 @@ export default function AdminSuratPage() {
 
                 {/* Tanggal Diterima (Hanya Surat Masuk) */}
                 <div className="space-y-2 col-span-1">
-                  <label className={`text-xs font-semibold uppercase block ${jenis === 'KELUAR' ? 'text-slate-600' : 'text-slate-355'}`}>
+                  <label className={`text-xs font-semibold uppercase block ${jenis === 'KELUAR' ? 'text-slate-600' : 'text-slate-400'}`}>
                     Tanggal Diterima
                   </label>
                   <input
@@ -598,7 +598,7 @@ export default function AdminSuratPage() {
 
               {/* Keterangan */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-355 uppercase block">Keterangan Tambahan</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase block">Keterangan Tambahan</label>
                 <textarea
                   value={keterangan}
                   onChange={(e) => setKeterangan(e.target.value)}

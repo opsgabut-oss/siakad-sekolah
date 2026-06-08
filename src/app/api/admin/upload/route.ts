@@ -46,8 +46,17 @@ export async function POST(request: NextRequest) {
     let driveUrl = null;
     let driveError = null;
 
+    // Log configuration status
+    const driveConfigured = isGDriveConfigured();
+    console.log('Google Drive Configuration Check:', {
+      configured: driveConfigured,
+      hasFolderId: !!process.env.GOOGLE_DRIVE_FOLDER_ID,
+      hasEmail: !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      hasPrivateKey: !!process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+    });
+
     // 3. Upload to Google Drive if configured
-    if (isGDriveConfigured()) {
+    if (driveConfigured) {
       try {
         const categoryMap: { [key: string]: string } = {
           SURAT_MASUK: 'Surat Masuk',
@@ -70,6 +79,12 @@ export async function POST(request: NextRequest) {
         console.error('Google Drive Upload Error:', err);
         driveError = err.message || 'Error occurred during Google Drive upload';
       }
+    } else {
+      console.warn('Google Drive is not configured. Details of missing environment variables:', {
+        GOOGLE_DRIVE_FOLDER_ID_missing: !process.env.GOOGLE_DRIVE_FOLDER_ID,
+        GOOGLE_SERVICE_ACCOUNT_EMAIL_missing: !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_missing: !process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY,
+      });
     }
 
     const tautanBerkas = driveUrl || localUrl;

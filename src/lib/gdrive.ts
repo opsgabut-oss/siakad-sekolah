@@ -1,8 +1,17 @@
 import jwt from 'jsonwebtoken';
 
-const FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
-const CLIENT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-const PRIVATE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n');
+function cleanEnvVar(val: string | undefined): string | undefined {
+  if (!val) return undefined;
+  let clean = val.trim();
+  if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+    clean = clean.slice(1, -1);
+  }
+  return clean;
+}
+
+const FOLDER_ID = cleanEnvVar(process.env.GOOGLE_DRIVE_FOLDER_ID);
+const CLIENT_EMAIL = cleanEnvVar(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+const PRIVATE_KEY = cleanEnvVar(process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY)?.replace(/\\n/g, '\n');
 
 export function isGDriveConfigured(): boolean {
   return !!(FOLDER_ID && CLIENT_EMAIL && PRIVATE_KEY);
@@ -48,9 +57,9 @@ async function getOrCreateSubFolder(
   parentId: string,
   accessToken: string
 ): Promise<string> {
-  // 1. Search if folder already exists
+  // 1. Search if folder already exists (supports Shared Drives / Drive Bersama)
   const query = `mimeType = 'application/vnd.google-apps.folder' and name = '${categoryName}' and '${parentId}' in parents and trashed = false`;
-  const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)&spaces=drive`;
+  const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)&spaces=drive&supportsAllDrives=true&includeItemsFromAllDrives=true`;
 
   const searchRes = await fetch(searchUrl, {
     headers: {
@@ -59,7 +68,8 @@ async function getOrCreateSubFolder(
   });
 
   if (!searchRes.ok) {
-    throw new Error(`Failed to search folder: ${searchRes.statusText}`);
+    const errorData = await searchRes.json().catch(() => ({}));
+    throw new Error(`Failed to search folder: ${searchRes.statusText}. ${JSON.stringify(errorData)}`);
   }
 
   const searchData = await searchRes.json();
@@ -67,8 +77,8 @@ async function getOrCreateSubFolder(
     return searchData.files[0].id;
   }
 
-  // 2. Folder does not exist, create it
-  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+  // 2. Folder does not exist, create it (supports Shared Drives / Drive Bersama)
+  const createRes = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -82,7 +92,8 @@ async function getOrCreateSubFolder(
   });
 
   if (!createRes.ok) {
-    throw new Error(`Failed to create subfolder: ${createRes.statusText}`);
+    const errorData = await createRes.json().catch(() => ({}));
+    throw new Error(`Failed to create subfolder: ${createRes.statusText}. ${JSON.stringify(errorData)}`);
   }
 
   const createData = await createRes.json();
@@ -110,8 +121,8 @@ export async function uploadToGoogleDrive(
   // 1. Get or create the subfolder corresponding to the category
   const folderId = await getOrCreateSubFolder(categoryName, parentId, accessToken);
 
-  // 2. Create the file metadata
-  const metadataRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+  // 2. Create the file metadata (supports Shared Drives / Drive Bersama)
+  const metadataRes = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -132,8 +143,8 @@ export async function uploadToGoogleDrive(
   const fileMetadata = await metadataRes.json();
   const fileId = fileMetadata.id;
 
-  // 3. Upload file content to the created file ID
-  const uploadRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+  // 3. Upload file content to the created file ID (supports Shared Drives / Drive Bersama)
+  const uploadRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media&supportsAllDrives=true`, {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -143,11 +154,12 @@ export async function uploadToGoogleDrive(
   });
 
   if (!uploadRes.ok) {
-    throw new Error(`Failed to upload file content: ${uploadRes.statusText}`);
+    const errorData = await uploadRes.json().catch(() => ({}));
+    throw new Error(`Failed to upload file content: ${uploadRes.statusText}. ${JSON.stringify(errorData)}`);
   }
 
-  // 4. Set permission to "anyone with link can view"
-  const permissionRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+  // 4. Set permission to "anyone with link can view" (supports Shared Drives / Drive Bersama)
+  const permissionRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions?supportsAllDrives=true`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -163,15 +175,16 @@ export async function uploadToGoogleDrive(
     console.error(`Warning: Failed to set public permission: ${permissionRes.statusText}`);
   }
 
-  // 5. Retrieve the webViewLink
-  const getFileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=webViewLink`, {
+  // 5. Retrieve the webViewLink (supports Shared Drives / Drive Bersama)
+  const getFileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=webViewLink&supportsAllDrives=true`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
   });
 
   if (!getFileRes.ok) {
-    throw new Error(`Failed to retrieve file details: ${getFileRes.statusText}`);
+    const errorData = await getFileRes.json().catch(() => ({}));
+    throw new Error(`Failed to retrieve file details: ${getFileRes.statusText}. ${JSON.stringify(errorData)}`);
   }
 
   const fileDetails = await getFileRes.json();
@@ -180,3 +193,4 @@ export async function uploadToGoogleDrive(
     webViewLink: fileDetails.webViewLink,
   };
 }
+

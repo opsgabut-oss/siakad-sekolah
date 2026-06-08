@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import fs from 'fs';
+import path from 'path';
+import { isGDriveConfigured, uploadToGoogleDrive } from '@/lib/gdrive';
 
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser();
@@ -35,22 +36,55 @@ export async function POST(request: Request) {
     // Nama file unik
     const filename = `logo-${type || 'upload'}-${Date.now()}.${cleanExt}`;
     
-    // Tentukan direktori
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    
-    // Pastikan direktori ada
-    await mkdir(uploadDir, { recursive: true });
-    
-    // Simpan berkas
-    const filepath = join(uploadDir, filename);
-    await writeFile(filepath, buffer);
+    let localUrl = null;
+    try {
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      const filepath = path.join(uploadDir, filename);
+      fs.writeFileSync(filepath, buffer);
+      localUrl = `/uploads/${filename}`;
+    } catch (localErr) {
+      console.warn('Local filesystem is read-only (normal for serverless platforms like Netlify/Vercel):', localErr);
+    }
+
+    let driveUrl = null;
+    let driveError = null;
+
+    if (isGDriveConfigured()) {
+      try {
+        const uploadResult = await uploadToGoogleDrive(
+          filename,
+          file.type || 'image/png',
+          buffer,
+          'Logo'
+        );
+        driveUrl = uploadResult.webViewLink;
+      } catch (err: any) {
+        console.error('Google Drive Profile Upload Error:', err);
+        driveError = err.message || 'Error occurred during Google Drive upload';
+      }
+    }
+
+    const url = driveUrl || localUrl;
+
+    if (!url) {
+      return NextResponse.json({ 
+        message: 'Gagal mengunggah berkas. Server lokal read-only dan Google Drive tidak terkonfigurasi dengan benar.',
+        driveError 
+      }, { status: 500 });
+    }
 
     return NextResponse.json({ 
       success: true, 
-      url: `/uploads/${filename}` 
+      url: url,
+      localUrl,
+      driveUrl
     });
   } catch (error: any) {
     console.error('File upload error:', error);
     return NextResponse.json({ message: error.message || 'Gagal mengunggah berkas' }, { status: 500 });
   }
 }
+

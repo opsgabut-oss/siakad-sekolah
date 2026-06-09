@@ -264,7 +264,10 @@ async function main() {
   const mapelBJAW = await prisma.mataPelajaran.create({
     data: { nama: 'Bahasa Jawa', kode: 'BJAW' },
   });
-  console.log('Created Merdeka Curriculum subjects');
+  const mapelCOD = await prisma.mataPelajaran.create({
+    data: { nama: 'Coding (Mapel Pilihan)', kode: 'CODING' },
+  });
+  console.log('Created Merdeka Curriculum subjects (with Coding)');
 
   // 7. Create Jadwal Pelajaran (Kelas 6)
   await prisma.jadwalPelajaran.createMany({

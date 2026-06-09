@@ -2,6 +2,35 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
 
+function getSubjectSortWeight(kode: string, nama: string): number {
+  const codeUpper = kode.toUpperCase();
+  const nameLower = nama.toLowerCase();
+
+  // 1. Pendidikan Agama (PABP)
+  if (codeUpper === 'PABP' || nameLower.includes('agama') || nameLower.includes('pabp')) return 1;
+  // 2. Pendidikan Pancasila (PP)
+  if (codeUpper === 'PP' || nameLower.includes('pancasila')) return 2;
+  // 3. Bahasa Indonesia (IND)
+  if (codeUpper === 'IND' || nameLower.includes('indonesia') || nameLower.includes('bahasa indonesia')) return 3;
+  // 4. Matematika (MTK)
+  if (codeUpper === 'MTK' || nameLower.includes('matematika')) return 4;
+  // 5. Ilmu Pengetahuan Alam dan Sosial (IPAS)
+  if (codeUpper === 'IPAS' || nameLower.includes('ipas') || (nameLower.includes('alam') && nameLower.includes('sosial'))) return 5;
+  // 6. Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)
+  if (codeUpper === 'PJOK' || nameLower.includes('pjok') || nameLower.includes('jasmani') || nameLower.includes('olahraga')) return 6;
+  // 7. Seni dan Budaya (SB)
+  if (codeUpper === 'SB' || nameLower.includes('seni') || nameLower.includes('budaya')) return 7;
+  // 8. Bahasa Inggris (ING)
+  if (codeUpper === 'ING' || nameLower.includes('inggris')) return 8;
+  // 9. Bahasa Jawa (BJAW)
+  if (codeUpper === 'BJAW' || nameLower.includes('jawa')) return 9;
+  // 10. Mapel Pilihan / Coding
+  if (codeUpper === 'CODING' || nameLower.includes('coding') || nameLower.includes('pilihan')) return 10;
+
+  // Fallback for other subjects
+  return 100;
+}
+
 export async function GET() {
   const user = await getAuthenticatedUser();
   if (!user || (user.role !== 'ADMIN' && user.role !== 'GURU' && user.role !== 'GURU_BK' && user.role !== 'KEPALA_SEKOLAH')) {
@@ -9,9 +38,19 @@ export async function GET() {
   }
 
   try {
-    const mapel = await prisma.mataPelajaran.findMany({
-      orderBy: { nama: 'asc' },
+    const mapel = await prisma.mataPelajaran.findMany();
+    
+    // Sort in-memory based on curriculum weight
+    mapel.sort((a, b) => {
+      const weightA = getSubjectSortWeight(a.kode, a.nama);
+      const weightB = getSubjectSortWeight(b.kode, b.nama);
+      
+      if (weightA !== weightB) {
+        return weightA - weightB;
+      }
+      return a.nama.localeCompare(b.nama);
     });
+
     return NextResponse.json(mapel);
   } catch (error) {
     return NextResponse.json({ message: 'Gagal mengambil data mata pelajaran' }, { status: 500 });

@@ -562,47 +562,92 @@ export default function GuruModulAjarPage() {
           <FileText className="mx-auto text-slate-700 mb-3" size={40} />
           <p className="text-slate-400 text-sm font-semibold">Belum ada modul ajar yang dibuat. Mulai buat dengan menekan tombol di atas.</p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {modulList.map((item) => (
-            <div
-              key={item.id}
-              className="bg-slate-900 border border-slate-850 rounded-2xl p-5 space-y-3 shadow-md hover:border-slate-800 transition-all flex flex-col justify-between"
-            >
-              <div className="space-y-1">
-                <div className="text-[10px] font-bold text-indigo-400">
-                  {item.mataPelajaran.nama} ({item.mataPelajaran.kode}) {item.kelas ? `• ${item.kelas.nama}` : ''}
+      ) : (() => {
+        interface GroupedModul {
+          key: string;
+          label: string;
+          list: ModulAjar[];
+        }
+
+        const groups: GroupedModul[] = [];
+        modulList.forEach((item) => {
+          const mapelName = item.mataPelajaran.nama;
+          const mapelKode = item.mataPelajaran.kode;
+          const kelasName = item.kelas ? item.kelas.nama : 'Semua Kelas';
+          const key = `${item.mataPelajaranId}-${item.kelasId || 'none'}`;
+          
+          let group = groups.find(g => g.key === key);
+          if (!group) {
+            group = {
+              key,
+              label: `${mapelName} (${mapelKode}) • ${kelasName}`,
+              list: []
+            };
+            groups.push(group);
+          }
+          group.list.push(item);
+        });
+
+        return (
+          <div className="space-y-8">
+            {groups.map((group) => (
+              <div key={group.key} className="space-y-4">
+                {/* Group Header */}
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-800/60">
+                  <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
+                  <h3 className="text-xs font-bold text-slate-200 tracking-wide flex items-center gap-2 select-none">
+                    {group.label}
+                    <span className="px-2 py-0.5 text-[9px] bg-slate-850 border border-slate-800 text-slate-400 rounded-full font-bold">
+                      {group.list.length} Modul
+                    </span>
+                  </h3>
                 </div>
-                <h4 className="text-sm font-bold text-slate-200">{item.judul}</h4>
-                <p className="text-[9px] text-slate-500 font-semibold">
-                  Terakhir Diperbarui: {new Date(item.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </p>
+
+                {/* Group Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {group.list.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-slate-900 border border-slate-850 rounded-2xl p-5 space-y-3 shadow-md hover:border-slate-800 transition-all flex flex-col justify-between"
+                    >
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-bold text-indigo-400">
+                          {item.mataPelajaran.nama} ({item.mataPelajaran.kode}) {item.kelas ? `• ${item.kelas.nama}` : ''}
+                        </div>
+                        <h4 className="text-sm font-bold text-slate-200">{item.judul}</h4>
+                        <p className="text-[9px] text-slate-500 font-semibold">
+                          Terakhir Diperbarui: {new Date(item.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 justify-end pt-3 border-t border-slate-850/60">
+                        <a
+                          href={`/guru/cetak-modul?id=${item.id}`}
+                          target="_blank"
+                          className="px-3 py-1.5 bg-slate-950/60 border border-slate-850 hover:bg-slate-800 text-slate-350 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1 transition-all"
+                        >
+                          <Printer size={12} /> Cetak Rapi
+                        </a>
+                        <button
+                          onClick={() => handleOpenEdit(item)}
+                          className="px-3 py-1.5 bg-slate-950 border border-slate-850 hover:bg-slate-800 text-indigo-400 hover:text-indigo-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <Edit3 size={12} /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-1.5 bg-slate-950 border border-slate-850 hover:bg-rose-950/20 text-slate-500 hover:text-rose-450 rounded-xl transition-all cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex gap-2 justify-end pt-3 border-t border-slate-850/60">
-                <a
-                  href={`/guru/cetak-modul?id=${item.id}`}
-                  target="_blank"
-                  className="px-3 py-1.5 bg-slate-950/60 border border-slate-850 hover:bg-slate-800 text-slate-350 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1 transition-all"
-                >
-                  <Printer size={12} /> Cetak Rapi
-                </a>
-                <button
-                  onClick={() => handleOpenEdit(item)}
-                  className="px-3 py-1.5 bg-slate-950 border border-slate-850 hover:bg-slate-800 text-indigo-400 hover:text-indigo-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
-                >
-                  <Edit3 size={12} /> Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="p-1.5 bg-slate-950 border border-slate-850 hover:bg-rose-950/20 text-slate-500 hover:text-rose-450 rounded-xl transition-all cursor-pointer"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Steps Wizard Modal */}
       {showModal && (

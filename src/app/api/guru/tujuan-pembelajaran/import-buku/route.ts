@@ -5,7 +5,7 @@ import { BUKU_PAKET_DATABASE } from '@/lib/bukuPaket';
 
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser();
-  if (!user || user.role !== 'GURU') {
+  if (!user || (user.role !== 'GURU' && user.role !== 'ADMIN')) {
     return NextResponse.json({ message: 'Tidak diizinkan' }, { status: 403 });
   }
 

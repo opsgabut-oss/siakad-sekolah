@@ -165,18 +165,55 @@ export default function JadwalPelajaranPage() {
     }
   };
 
+  const getNextTimeSlot = (day: string, currentJadwal: Jadwal[]) => {
+    const daySchedules = currentJadwal.filter(j => j.hari === day);
+    
+    if (daySchedules.length === 0) {
+      // defaults to first hour: 07:30 - 08:40 (2 JP = 70 minutes)
+      return { jamMulai: '07:30', jamSelesai: '08:40' };
+    }
+
+    // Find the last schedule ending time
+    const sorted = [...daySchedules].sort((a, b) => a.jamSelesai.localeCompare(b.jamSelesai));
+    const last = sorted[sorted.length - 1];
+    const lastEnd = last.jamSelesai;
+
+    let nextStart = lastEnd;
+
+    // Handle break times (istirahat 2 kali)
+    // Break 1: 08:40 - 09:00 (20 mins)
+    if (lastEnd === '08:40') {
+      nextStart = '09:00';
+    }
+    // Break 2: 10:10 - 10:30 (20 mins)
+    else if (lastEnd === '10:10') {
+      nextStart = '10:30';
+    }
+
+    // Calculate end time (default to 2 JP = 70 minutes)
+    const [h, m] = nextStart.split(':').map(Number);
+    let endMin = h * 60 + m + 70; // +70 mins
+    const endH = Math.floor(endMin / 60);
+    const endM = endMin % 60;
+    const jamSelesai = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+
+    return { jamMulai: nextStart, jamSelesai };
+  };
+
   const handleOpenAddModal = () => {
     if (!selectedKelasId) {
       alert('Pilih kelas terlebih dahulu!');
       return;
     }
     setEditingJadwal(null);
+    const initialDay = 'SENIN';
+    const nextSlot = getNextTimeSlot(initialDay, jadwalList);
     setFormData({
       mataPelajaranId: mapelList.length > 0 ? mapelList[0].id : '',
       guruId: guruList.length > 0 ? guruList[0].id : '',
-      hari: 'SENIN',
-      jamMulai: '07:30',
-      jamSelesai: '09:00',
+      hari: initialDay,
+      jamMulai: nextSlot.jamMulai,
+      jamSelesai: nextSlot.jamSelesai,
     });
     setError('');
     setIsModalOpen(true);
@@ -505,7 +542,16 @@ export default function JadwalPelajaranPage() {
                 <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Hari</label>
                 <select
                   value={formData.hari}
-                  onChange={(e) => setFormData({ ...formData, hari: e.target.value })}
+                  onChange={(e) => {
+                    const newDay = e.target.value;
+                    const nextSlot = getNextTimeSlot(newDay, jadwalList);
+                    setFormData({ 
+                      ...formData, 
+                      hari: newDay,
+                      jamMulai: nextSlot.jamMulai,
+                      jamSelesai: nextSlot.jamSelesai
+                    });
+                  }}
                   disabled={submitting}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500 transition-all"
                   required

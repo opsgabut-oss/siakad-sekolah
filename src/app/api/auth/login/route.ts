@@ -14,8 +14,26 @@ export async function POST(request: Request) {
       );
     }
 
+    let targetUsername = username;
+    if (username === 'admin') {
+      try {
+        const adminExists = await prisma.user.findUnique({ where: { username: 'admin' } });
+        if (!adminExists) {
+          const oldAdmin = await prisma.user.findUnique({ where: { username: 'admin.tu' } });
+          if (oldAdmin) {
+            await prisma.user.update({
+              where: { username: 'admin.tu' },
+              data: { username: 'admin' }
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to migrate admin.tu to admin:', err);
+      }
+    }
+
     const user = await prisma.user.findUnique({
-      where: { username },
+      where: { username: targetUsername },
     });
 
     if (!user) {

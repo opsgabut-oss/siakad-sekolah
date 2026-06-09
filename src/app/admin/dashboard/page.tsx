@@ -13,6 +13,31 @@ export default async function AdminDashboardPage() {
     where: { aktif: true }
   });
 
+  // Fetch overall student attendance stats
+  const totalStudentAbsensi = await prisma.absensi.count();
+  const studentHadir = await prisma.absensi.count({ where: { status: 'HADIR' } });
+  const studentSakit = await prisma.absensi.count({ where: { status: 'SAKIT' } });
+  const studentIzin = await prisma.absensi.count({ where: { status: 'IZIN' } });
+  const studentAlpa = await prisma.absensi.count({ where: { status: 'ALPA' } });
+
+  // Fetch overall teacher attendance stats
+  const totalTeacherAbsensi = await prisma.absensiGuru.count();
+  const teacherHadir = await prisma.absensiGuru.count({ where: { status: 'HADIR' } });
+  const teacherSakit = await prisma.absensiGuru.count({ where: { status: 'SAKIT' } });
+  const teacherIzin = await prisma.absensiGuru.count({ where: { status: 'IZIN' } });
+  const teacherAlpa = await prisma.absensiGuru.count({ where: { status: 'ALPA' } });
+
+  const studentHadirPct = totalStudentAbsensi > 0 ? Math.round((studentHadir / totalStudentAbsensi) * 100) : 0;
+  const studentSakitPct = totalStudentAbsensi > 0 ? Math.round((studentSakit / totalStudentAbsensi) * 100) : 0;
+  const studentIzinPct = totalStudentAbsensi > 0 ? Math.round((studentIzin / totalStudentAbsensi) * 100) : 0;
+  const studentAlpaPct = totalStudentAbsensi > 0 ? Math.round((studentAlpa / totalStudentAbsensi) * 100) : 0;
+
+  const teacherHadirPct = totalTeacherAbsensi > 0 ? Math.round((teacherHadir / totalTeacherAbsensi) * 100) : 0;
+  const teacherSakitPct = totalTeacherAbsensi > 0 ? Math.round((teacherSakit / totalTeacherAbsensi) * 100) : 0;
+  const teacherIzinPct = totalTeacherAbsensi > 0 ? Math.round((teacherIzin / totalTeacherAbsensi) * 100) : 0;
+  const teacherAlpaPct = totalTeacherAbsensi > 0 ? Math.round((teacherAlpa / totalTeacherAbsensi) * 100) : 0;
+
+
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
@@ -87,28 +112,147 @@ export default async function AdminDashboardPage() {
 
       </div>
 
-      {/* Info Card Tambahan */}
-      <div className="bg-linear-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <BookOpen className="text-indigo-400" size={22} />
-            Fase 1 SIAKAD: Absensi Digital
-          </h2>
-          <p className="text-slate-400 text-sm max-w-2xl leading-relaxed">
-            Pada fase ini, Guru dapat melakukan absensi secara mobile-friendly dari perangkat smartphone mereka. 
-            Pastikan data Guru memiliki NIP yang valid dan Siswa memiliki NISN yang terhubung ke kelas aktif agar 
-            dapat diabsen hari ini.
-          </p>
+      {/* Diagram Presentasi Kehadiran Siswa & Guru */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Card Presentasi Siswa */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+          <div className="flex justify-between items-center border-b border-slate-800/60 pb-4">
+            <div>
+              <h2 className="text-lg font-bold text-white">Presentasi Kehadiran Siswa</h2>
+              <p className="text-xs text-slate-500">Distribusi statistik absensi harian siswa</p>
+            </div>
+            <span className="text-xs font-mono bg-slate-950 px-3 py-1.5 rounded-xl text-slate-400 border border-slate-850">
+              Total Catatan: {totalStudentAbsensi}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
+            {/* Big Circular Indicator */}
+            <div className="flex flex-col items-center justify-center p-5 bg-slate-950/40 rounded-2xl border border-slate-850 col-span-1 text-center">
+              <span className="text-4xl font-black text-indigo-400">{studentHadirPct}%</span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Rata-rata Hadir</span>
+            </div>
+
+            {/* Individual Progress Bars */}
+            <div className="col-span-2 space-y-3">
+              {/* Hadir */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Hadir</span>
+                  <span className="text-slate-200 font-bold">{studentHadir} ({studentHadirPct}%)</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                  <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${studentHadirPct}%` }} />
+                </div>
+              </div>
+
+              {/* Sakit */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> Sakit</span>
+                  <span className="text-slate-200 font-bold">{studentSakit} ({studentSakitPct}%)</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                  <div className="bg-amber-500 h-full rounded-full" style={{ width: `${studentSakitPct}%` }} />
+                </div>
+              </div>
+
+              {/* Izin */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-indigo-500" /> Izin</span>
+                  <span className="text-slate-200 font-bold">{studentIzin} ({studentIzinPct}%)</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                  <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${studentIzinPct}%` }} />
+                </div>
+              </div>
+
+              {/* Alpa */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> Alpa</span>
+                  <span className="text-slate-200 font-bold">{studentAlpa} ({studentAlpaPct}%)</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                  <div className="bg-rose-500 h-full rounded-full" style={{ width: `${studentAlpaPct}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-3 shrink-0">
-          <Link
-            href="/admin/siswa"
-            className="px-5 py-3 bg-linear-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-2xl text-xs font-semibold shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 transition-all duration-200 block text-center"
-          >
-            Import Data Siswa (CSV)
-          </Link>
+
+        {/* Card Presentasi Guru & Staf */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+          <div className="flex justify-between items-center border-b border-slate-800/60 pb-4">
+            <div>
+              <h2 className="text-lg font-bold text-white">Presentasi Kehadiran Guru & Staf</h2>
+              <p className="text-xs text-slate-500">Distribusi statistik absensi harian guru & staf</p>
+            </div>
+            <span className="text-xs font-mono bg-slate-950 px-3 py-1.5 rounded-xl text-slate-400 border border-slate-850">
+              Total Catatan: {totalTeacherAbsensi}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
+            {/* Big Circular Indicator */}
+            <div className="flex flex-col items-center justify-center p-5 bg-slate-950/40 rounded-2xl border border-slate-850 col-span-1 text-center">
+              <span className="text-4xl font-black text-violet-400">{teacherHadirPct}%</span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Rata-rata Hadir</span>
+            </div>
+
+            {/* Individual Progress Bars */}
+            <div className="col-span-2 space-y-3">
+              {/* Hadir */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Hadir</span>
+                  <span className="text-slate-200 font-bold">{teacherHadir} ({teacherHadirPct}%)</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                  <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${teacherHadirPct}%` }} />
+                </div>
+              </div>
+
+              {/* Sakit */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> Sakit</span>
+                  <span className="text-slate-200 font-bold">{teacherSakit} ({teacherSakitPct}%)</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                  <div className="bg-amber-500 h-full rounded-full" style={{ width: `${teacherSakitPct}%` }} />
+                </div>
+              </div>
+
+              {/* Izin */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-indigo-500" /> Izin</span>
+                  <span className="text-slate-200 font-bold">{teacherIzin} ({teacherIzinPct}%)</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                  <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${teacherIzinPct}%` }} />
+                </div>
+              </div>
+
+              {/* Alpa */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> Alpa</span>
+                  <span className="text-slate-200 font-bold">{teacherAlpa} ({teacherAlpaPct}%)</span>
+                </div>
+                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                  <div className="bg-rose-500 h-full rounded-full" style={{ width: `${teacherAlpaPct}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
       </div>
     </div>
   );
 }
+

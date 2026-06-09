@@ -230,16 +230,27 @@ export default function AdminSuratPage() {
             Arsip Dokumen Sekolah
           </h1>
           <p className="text-slate-400 mt-1 text-sm">
-            Simpan, kelola, dan unggah arsip surat, rapor, ijazah, serta dokumen sekolah lainnya.
+            Simpan, kelola, dan rekap arsip surat, rapor, ijazah, serta dokumen sekolah lainnya.
           </p>
         </div>
-        <button
-          onClick={handleOpenAdd}
-          className="px-5 py-3 bg-linear-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-2xl text-xs font-semibold shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 transition-all duration-200 flex items-center gap-2 cursor-pointer select-none"
-        >
-          <Plus size={16} />
-          Tambah Arsip Dokumen
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <a
+            href="https://drive.google.com/drive/folders/1yOhyQan0wlrmmeZbtg2uiZd5PuD98ymE?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-5 py-3 bg-slate-900 border border-slate-805 hover:bg-slate-800 text-slate-200 rounded-2xl text-xs font-semibold shadow-lg transition-all duration-200 flex items-center gap-2 cursor-pointer select-none"
+          >
+            <FolderOpen size={16} className="text-amber-500" />
+            Buka Google Drive Sekolah
+          </a>
+          <button
+            onClick={handleOpenAdd}
+            className="px-5 py-3 bg-linear-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-2xl text-xs font-semibold shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 transition-all duration-200 flex items-center gap-2 cursor-pointer select-none"
+          >
+            <Plus size={16} />
+            Tambah Arsip Dokumen
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -551,58 +562,23 @@ export default function AdminSuratPage() {
                 </div>
               </div>
 
-              {/* Unggah Berkas & Tautan */}
+              {/* Tautan Berkas (Manual) */}
               <div className="space-y-2 border border-slate-800 bg-slate-950/20 p-4 rounded-2xl">
-                <label className="text-xs font-semibold text-slate-350 uppercase block">Unggah Berkas Baru</label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="file"
-                    id="document-file-input"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="document-file-input"
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold cursor-pointer transition-colors"
-                  >
-                    {selectedFile ? 'Ubah Berkas' : 'Pilih Berkas'}
-                  </label>
-                  <span className="text-xs text-slate-400 truncate max-w-[150px]">
-                    {selectedFile ? selectedFile.name : 'Belum ada berkas dipilih'}
-                  </span>
-                  {selectedFile && (
-                    <button
-                      type="button"
-                      onClick={handleUploadFile}
-                      disabled={uploading}
-                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1"
-                    >
-                      {uploading ? (
-                        <>
-                          <Loader2 size={12} className="animate-spin" />
-                          Proses...
-                        </>
-                      ) : (
-                        'Unggah'
-                      )}
-                    </button>
-                  )}
-                </div>
-
-                <div className="space-y-1 mt-3">
-                  <label className="text-[10px] font-semibold text-slate-500 uppercase block">Tautan Berkas (Google Drive / Local)</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                      <LinkIcon size={14} />
-                    </div>
-                    <input
-                      type="url"
-                      value={tautanBerkas}
-                      onChange={(e) => setTautanBerkas(e.target.value)}
-                      placeholder="https://drive.google.com/file/d/... atau path lokal"
-                      className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-855 rounded-xl text-white placeholder-slate-650 text-xs focus:outline-hidden focus:border-indigo-500"
-                    />
+                <label className="text-xs font-semibold text-slate-350 uppercase block">Tautan Berkas (Link Google Drive)</label>
+                <p className="text-[10px] text-slate-500">
+                  Unggah file Anda secara manual ke folder Google Drive Sekolah, lalu salin dan tempel (paste) link share-nya di bawah ini:
+                </p>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <LinkIcon size={14} />
                   </div>
+                  <input
+                    type="url"
+                    value={tautanBerkas}
+                    onChange={(e) => setTautanBerkas(e.target.value)}
+                    placeholder="Contoh: https://drive.google.com/file/d/... atau link berkas lainnya"
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-950 border border-slate-855 rounded-xl text-white placeholder-slate-650 text-xs focus:outline-hidden focus:border-indigo-500"
+                  />
                 </div>
               </div>
 

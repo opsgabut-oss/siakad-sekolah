@@ -161,13 +161,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* Footer Info */}
-        <div className="text-center mt-8 pt-6 border-t border-slate-800/60">
-          <p className="text-xs text-slate-500">
-            Fase 2: Portal, Laporan, Jadwal & Nilai
-          </p>
-        </div>
       </div>
     </div>
   );

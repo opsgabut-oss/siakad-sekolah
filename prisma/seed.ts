@@ -28,7 +28,7 @@ async function main() {
   // 1. Create Admin TU User
   const adminUser = await prisma.user.create({
     data: {
-      username: 'admin.tu',
+      username: 'admin',
       password: passwordAdmin,
       role: Role.ADMIN,
     },

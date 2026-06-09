@@ -196,6 +196,7 @@ export async function POST(request: Request) {
       prompt += `- Pemahaman Bermakna Buku: ${selectedChapter.pemahamanBermakna}\n`;
       prompt += `- Pertanyaan Pemantik Buku: ${selectedChapter.pertanyaanPemantik}\n`;
       prompt += `- Kegiatan Pembelajaran Buku: ${selectedChapter.kegiatanPendahuluan} ${selectedChapter.kegiatanInti} ${selectedChapter.kegiatanPenutup}\n`;
+      prompt += `- Lembar Kerja Peserta Didik (LKPD) Buku: ${selectedChapter.lkpd}\n`;
       prompt += `- Rujukan Daftar Pustaka: ${selectedChapter.daftarPustaka}\n\n`;
       prompt += `Tugas Anda adalah memodifikasi, memperluas, dan melengkapi seluruh bagian di atas menjadi draf modul ajar utuh kelas yang mengesankan, detail, dan formal.`;
     }
@@ -221,7 +222,7 @@ export async function POST(request: Request) {
   "asesmenDiagnostik": "Metode penilaian awal (contoh: kuis singkat, tanya jawab lisan)",
   "asesmenFormatif": "Metode penilaian proses (contoh: rubrik observasi keaktifan kelompok, pengerjaan LKPD)",
   "asesmenSumatif": "Metode penilaian hasil akhir (contoh: tes tertulis 5 soal pilihan ganda/isian)",
-  "lkpd": "Tuliskan soal latihan singkat atau tugas kelompok di dalam LKPD untuk dikerjakan siswa",
+  "lkpd": "Tuliskan soal latihan singkat atau tugas kelompok di dalam LKPD untuk dikerjakan siswa. Wajib mengacu dan mengembangkan dari LKPD Buku resmi yang disediakan di atas (jika ada).",
   "glosarium": "Definisi istilah-istilah penting dalam materi ini",
   "daftarPustaka": "Daftar pustaka acuan resmi (contoh: Buku Siswa dan Buku Guru Mata Pelajaran Kelas V SD Kemendikdasmen 2025)"
 }

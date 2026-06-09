@@ -203,7 +203,40 @@ export default function GuruModulAjarPage() {
 
       setKelasList(finalKelas);
       setMapelList(finalMapel);
-      setModulList(dataModul);
+      // Sort modulList: Group by Subject and Class, then sort by Bab/Chapter order in BUKU_PAKET_DATABASE
+      const sortedModulList = [...dataModul].sort((a: any, b: any) => {
+        // 1. Group by Mata Pelajaran
+        const mapelA = a.mataPelajaran?.nama || '';
+        const mapelB = b.mataPelajaran?.nama || '';
+        const mapelCompare = mapelA.localeCompare(mapelB);
+        if (mapelCompare !== 0) return mapelCompare;
+
+        // 2. Group by Kelas
+        const kelasA = a.kelas?.nama || '';
+        const kelasB = b.kelas?.nama || '';
+        const kelasCompare = kelasA.localeCompare(kelasB);
+        if (kelasCompare !== 0) return kelasCompare;
+
+        // 3. Sort by Bab (using selectedBukuPaketId position in BUKU_PAKET_DATABASE)
+        const idA = a.informasiUmum?.selectedBukuPaketId || '';
+        const idB = b.informasiUmum?.selectedBukuPaketId || '';
+
+        const indexA = BUKU_PAKET_DATABASE.findIndex(c => c.id === idA);
+        const indexB = BUKU_PAKET_DATABASE.findIndex(c => c.id === idB);
+
+        // If both are found in the database, sort by database index
+        if (indexA !== -1 && indexB !== -1) {
+          return indexA - indexB;
+        }
+        // Put those found in the DB before those that are not
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+
+        // 4. Fallback to title compare or updatedAt desc
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      });
+
+      setModulList(sortedModulList);
 
       if (finalKelas.length > 0) setKelasId(finalKelas[0].id);
       if (finalMapel.length > 0) setMataPelajaranId(finalMapel[0].id);

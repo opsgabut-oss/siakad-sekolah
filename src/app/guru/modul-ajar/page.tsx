@@ -89,9 +89,24 @@ export default function GuruModulAjarPage() {
   const [glosarium, setGlosarium] = useState('');
   const [daftarPustaka, setDaftarPustaka] = useState('');
 
+  // AI Generator States
+  const [geminiKey, setGeminiKey] = useState('');
+  const [selectedTpIdForAi, setSelectedTpIdForAi] = useState('');
+  const [additionalTopicForAi, setAdditionalTopicForAi] = useState('');
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [showAiConfig, setShowAiConfig] = useState(false);
+
   useEffect(() => {
     fetchConfigs();
   }, []);
+
+  // Load API key from local storage when modal is opened or on start
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedKey = localStorage.getItem('gemini_api_key') || '';
+      setGeminiKey(savedKey);
+    }
+  }, [showModal]);
 
   useEffect(() => {
     if (mataPelajaranId) {
@@ -233,6 +248,82 @@ export default function GuruModulAjarPage() {
       .map((tp, idx) => `${idx + 1}. ${tp.deskripsi}`)
       .join('\n');
     setManualTpText(selectedDescriptions);
+  };
+
+  const handleGenerateAi = async () => {
+    const key = geminiKey || localStorage.getItem('gemini_api_key') || '';
+    if (!key) {
+      alert('Silakan masukkan API Key Gemini Anda terlebih dahulu di bagian panel AI.');
+      setShowAiConfig(true);
+      return;
+    }
+    if (!selectedTpIdForAi && !additionalTopicForAi.trim()) {
+      alert('Silakan pilih salah satu Tujuan Pembelajaran (TP) atau ketik topik tambahan.');
+      return;
+    }
+
+    setGeneratingAi(true);
+    setError('');
+    try {
+      const res = await fetch('/api/guru/modul-ajar/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tujuanPembelajaranId: selectedTpIdForAi,
+          mataPelajaranId,
+          kelasId,
+          topik: additionalTopicForAi,
+          apiKey: key
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Gagal generate modul ajar dengan AI');
+      }
+
+      // Populate form states
+      if (data.judul) setJudul(data.judul);
+      if (data.semester) setSemester(data.semester);
+      if (data.alokasiWaktu) setAlokasiWaktu(data.alokasiWaktu);
+      if (data.kompetensiAwal) setKompetensiAwal(data.kompetensiAwal);
+      if (data.saranaPrasarana) setSaranaPrasarana(data.saranaPrasarana);
+      if (data.targetPeserta) setTargetPeserta(data.targetPeserta);
+      if (data.modelPembelajaran) setModelPembelajaran(data.modelPembelajaran);
+      
+      if (data.profilLulusan && Array.isArray(data.profilLulusan)) {
+        setProfilLulusan(data.profilLulusan);
+      }
+      
+      if (data.tujuanPembelajaranText) setManualTpText(data.tujuanPembelajaranText);
+      if (data.pemahamanBermakna) setPemahamanBermakna(data.pemahamanBermakna);
+      if (data.pertanyaanPemantik) setPertanyaanPemantik(data.pertanyaanPemantik);
+      
+      if (data.asesmenDiagnostik) setAsesmenDiagnostik(data.asesmenDiagnostik);
+      if (data.asesmenFormatif) setAsesmenFormatif(data.asesmenFormatif);
+      if (data.asesmenSumatif) setAsesmenSumatif(data.asesmenSumatif);
+      
+      if (data.kegiatanPendahuluan) setKegiatanPendahuluan(data.kegiatanPendahuluan);
+      if (data.kegiatanInti) setKegiatanInti(data.kegiatanInti);
+      if (data.kegiatanPenutup) setKegiatanPenutup(data.kegiatanPenutup);
+      
+      if (data.lkpd) setLkpd(data.lkpd);
+      if (data.glosarium) setGlosarium(data.glosarium);
+      if (data.daftarPustaka) setDaftarPustaka(data.daftarPustaka);
+
+      // Otomatis centang TP jika dipilih
+      if (selectedTpIdForAi) {
+        setSelectedTpIds([selectedTpIdForAi]);
+      }
+
+      alert('Berhasil! Seluruh form Modul Ajar telah diisi secara otomatis oleh AI. Silakan periksa di setiap langkah wizard.');
+      setShowAiConfig(false);
+    } catch (err: any) {
+      setError(err.message || 'Gagal generate modul ajar dengan AI');
+      alert('Gagal: ' + (err.message || 'Gagal generate modul ajar dengan AI'));
+    } finally {
+      setGeneratingAi(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -443,6 +534,78 @@ export default function GuruModulAjarPage() {
               {/* STEP 1: IDENTITAS & INFORMASI UMUM */}
               {currentStep === 1 && (
                 <div className="space-y-4">
+                  {/* AI Generator Panel */}
+                  <div className="bg-indigo-950/20 border border-indigo-500/25 p-4 rounded-2xl space-y-3">
+                    <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowAiConfig(!showAiConfig)}>
+                      <h4 className="text-[10px] font-extrabold text-indigo-400 flex items-center gap-1.5 uppercase">
+                        🤖 Pembuat Modul Ajar AI Otomatis (Gemini)
+                      </h4>
+                      <span className="text-[9px] text-indigo-300 font-bold bg-indigo-500/10 px-2 py-0.5 rounded-full hover:bg-indigo-500/20 transition-all">
+                        {showAiConfig ? 'Sembunyikan' : 'Buka Panel AI'}
+                      </span>
+                    </div>
+                    
+                    {showAiConfig && (
+                      <div className="space-y-3 pt-2 border-t border-indigo-500/10">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">1. Masukkan API Key Gemini Anda</label>
+                          <input
+                            type="password"
+                            value={geminiKey}
+                            onChange={(e) => {
+                              setGeminiKey(e.target.value);
+                              localStorage.setItem('gemini_api_key', e.target.value);
+                            }}
+                            placeholder="AIzaSy..."
+                            className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500"
+                          />
+                          <p className="text-[8px] text-slate-500">API Key disimpan secara lokal di browser Anda (local storage). Dapatkan kunci gratis di Google AI Studio.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase">2. Pilih Tujuan Pembelajaran (TP)</label>
+                            <select
+                              value={selectedTpIdForAi}
+                              onChange={(e) => setSelectedTpIdForAi(e.target.value)}
+                              className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden"
+                            >
+                              <option value="">-- Pilih TP dari Prota --</option>
+                              {tpsForMapel.map((tp) => (
+                                <option key={tp.id} value={tp.id}>
+                                  {tp.deskripsi.length > 50 ? `${tp.deskripsi.substring(0, 50)}...` : tp.deskripsi}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase">3. Topik Tambahan / Tema (Opsional)</label>
+                            <input
+                              type="text"
+                              value={additionalTopicForAi}
+                              onChange={(e) => setAdditionalTopicForAi(e.target.value)}
+                              placeholder="Misal: Bab 3 - Bilangan Pecahan halaman 45"
+                              className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            disabled={generatingAi}
+                            onClick={handleGenerateAi}
+                            className="px-4 py-2 bg-indigo-650 hover:bg-indigo-600 disabled:bg-indigo-600/50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                          >
+                            {generatingAi ? <Loader2 size={13} className="animate-spin text-white" /> : '🤖'}
+                            {generatingAi ? 'Sedang Menulis Modul...' : 'Mulai Generate Modul Ajar'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Judul Modul Ajar</label>
                     <input

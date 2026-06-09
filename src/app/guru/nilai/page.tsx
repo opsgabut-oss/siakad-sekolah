@@ -55,6 +55,7 @@ export default function InputNilaiPage() {
   });
   const [savingTp, setSavingTp] = useState(false);
   const [loadingTp, setLoadingTp] = useState(false);
+  const [importingBuku, setImportingBuku] = useState(false);
 
   // Tab Capaian TP States
   const [capaianData, setCapaianData] = useState<{ tps: any[]; students: any[] } | null>(null);
@@ -351,6 +352,38 @@ export default function InputNilaiPage() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus Tujuan Pembelajaran');
+    }
+  };
+
+  const handleImportBukuPaket = async () => {
+    if (selectedSesiIndex === -1) return;
+    const sesi = sesiList[selectedSesiIndex];
+
+    setImportingBuku(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch('/api/guru/tujuan-pembelajaran/import-buku', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mataPelajaranId: sesi.mapelId,
+          kelasId: sesi.kelasId
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Gagal memuat TP otomatis dari Buku Paket');
+      }
+
+      setSuccess(data.message || 'Tujuan Pembelajaran berhasil dimuat!');
+      fetchTps(sesi.mapelId);
+      setTimeout(() => setSuccess(''), 4000);
+    } catch (err: any) {
+      setError(err.message || 'Gagal memuat TP otomatis dari Buku Paket');
+    } finally {
+      setImportingBuku(false);
     }
   };
 
@@ -669,15 +702,25 @@ export default function InputNilaiPage() {
                   <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
                     Daftar TP (Program Tahunan)
                   </h3>
-                  {tpList.length > 0 && (
-                    <a
-                      href={`/guru/cetak-prota?kelasId=${currentSesi.kelasId}&mapelId=${currentSesi.mapelId}`}
-                      target="_blank"
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all shadow-md"
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleImportBukuPaket}
+                      disabled={importingBuku}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/60 hover:bg-indigo-850 text-indigo-200 border border-indigo-800 rounded-xl text-xs font-semibold transition-all shadow-md cursor-pointer disabled:opacity-50"
                     >
-                      <Printer size={13} /> Cetak Lembar Prota
-                    </a>
-                  )}
+                      {importingBuku ? <RefreshCw size={13} className="animate-spin" /> : '🤖'}
+                      {importingBuku ? 'Memuat...' : 'Muat TP dari Buku Paket'}
+                    </button>
+                    {tpList.length > 0 && (
+                      <a
+                        href={`/guru/cetak-prota?kelasId=${currentSesi.kelasId}&mapelId=${currentSesi.mapelId}`}
+                        target="_blank"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all shadow-md"
+                      >
+                        <Printer size={13} /> Cetak Lembar Prota
+                      </a>
+                    )}
+                  </div>
                 </div>
 
                 {loadingTp ? (

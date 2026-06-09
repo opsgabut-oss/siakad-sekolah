@@ -538,6 +538,35 @@ export default function GuruModulAjarPage() {
               {/* STEP 1: IDENTITAS & INFORMASI UMUM */}
               {currentStep === 1 && (
                 <div className="space-y-4">
+                  {/* Pilih Mata Pelajaran & Pilih Kelas (Di Paling Atas) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pilih Mata Pelajaran</label>
+                      <select
+                        value={mataPelajaranId}
+                        onChange={(e) => setMataPelajaranId(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
+                      >
+                        {mapelList.map((m) => (
+                          <option key={m.id} value={m.id}>{m.nama} ({m.kode})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pilih Kelas</label>
+                      <select
+                        value={kelasId}
+                        onChange={(e) => setKelasId(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
+                      >
+                        {kelasList.map((k) => (
+                          <option key={k.id} value={k.id}>{k.nama}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   {/* AI Generator Panel */}
                   {(() => {
                     const selectedMapel = mapelList.find(m => m.id === mataPelajaranId);
@@ -648,34 +677,6 @@ export default function GuruModulAjarPage() {
                       placeholder="Contoh: Modul Ajar Matematika - Pembagian Pecahan"
                       className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-semibold"
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pilih Mata Pelajaran</label>
-                      <select
-                        value={mataPelajaranId}
-                        onChange={(e) => setMataPelajaranId(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
-                      >
-                        {mapelList.map((m) => (
-                          <option key={m.id} value={m.id}>{m.nama} ({m.kode})</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pilih Kelas</label>
-                      <select
-                        value={kelasId}
-                        onChange={(e) => setKelasId(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
-                      >
-                        {kelasList.map((k) => (
-                          <option key={k.id} value={k.id}>{k.nama}</option>
-                        ))}
-                      </select>
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

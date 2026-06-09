@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BookOpen, Plus, Trash2, Edit3, Loader2, X, Printer, Check, Info, FileText, ChevronRight, ChevronLeft, Save } from 'lucide-react';
+import { BUKU_PAKET_DATABASE } from '@/lib/bukuPaket';
 
 interface Kelas {
   id: string;
@@ -93,6 +94,7 @@ export default function GuruModulAjarPage() {
   const [geminiKey, setGeminiKey] = useState('');
   const [selectedTpIdForAi, setSelectedTpIdForAi] = useState('');
   const [additionalTopicForAi, setAdditionalTopicForAi] = useState('');
+  const [selectedBukuPaketId, setSelectedBukuPaketId] = useState('');
   const [generatingAi, setGeneratingAi] = useState(false);
   const [showAiConfig, setShowAiConfig] = useState(false);
 
@@ -183,6 +185,9 @@ export default function GuruModulAjarPage() {
     setLkpd('');
     setGlosarium('');
     setDaftarPustaka('');
+    setSelectedBukuPaketId('');
+    setSelectedTpIdForAi('');
+    setAdditionalTopicForAi('');
 
     setCurrentStep(1);
     setError('');
@@ -219,6 +224,9 @@ export default function GuruModulAjarPage() {
     setLkpd(lamp.lkpd || '');
     setGlosarium(lamp.glosarium || '');
     setDaftarPustaka(lamp.daftarPustaka || '');
+    setSelectedBukuPaketId('');
+    setSelectedTpIdForAi('');
+    setAdditionalTopicForAi('');
 
     setCurrentStep(1);
     setError('');
@@ -251,8 +259,8 @@ export default function GuruModulAjarPage() {
   };
 
   const handleGenerateAi = async () => {
-    if (!selectedTpIdForAi && !additionalTopicForAi.trim()) {
-      alert('Silakan pilih salah satu Tujuan Pembelajaran (TP) atau ketik topik tambahan.');
+    if (!selectedTpIdForAi && !additionalTopicForAi.trim() && !selectedBukuPaketId) {
+      alert('Silakan pilih salah satu Tujuan Pembelajaran (TP), ketik topik tambahan, atau pilih rujukan bab buku paket.');
       return;
     }
 
@@ -268,6 +276,7 @@ export default function GuruModulAjarPage() {
           mataPelajaranId,
           kelasId,
           topik: additionalTopicForAi,
+          bukuPaketChapterId: selectedBukuPaketId,
           apiKey: key
         })
       });
@@ -530,77 +539,105 @@ export default function GuruModulAjarPage() {
               {currentStep === 1 && (
                 <div className="space-y-4">
                   {/* AI Generator Panel */}
-                  <div className="bg-indigo-950/25 border border-indigo-500/25 p-4 rounded-2xl space-y-4">
-                    <h4 className="text-[10px] font-extrabold text-indigo-400 flex items-center gap-1.5 uppercase">
-                      🤖 Pembuat Modul Ajar Otomatis (AI & Template Cepat)
-                    </h4>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">1. Pilih Tujuan Pembelajaran (TP)</label>
-                        <select
-                          value={selectedTpIdForAi}
-                          onChange={(e) => setSelectedTpIdForAi(e.target.value)}
-                          className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
-                        >
-                          <option value="">-- Pilih TP dari Prota --</option>
-                          {tpsForMapel.map((tp) => (
-                            <option key={tp.id} value={tp.id}>
-                              {tp.deskripsi.length > 50 ? `${tp.deskripsi.substring(0, 50)}...` : tp.deskripsi}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">2. Topik Tambahan / Tema (Opsional)</label>
-                        <input
-                          type="text"
-                          value={additionalTopicForAi}
-                          onChange={(e) => setAdditionalTopicForAi(e.target.value)}
-                          placeholder="Misal: Bab 3 - Bilangan Pecahan halaman 45"
-                          className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
-                        />
-                      </div>
-                    </div>
+                  {(() => {
+                    const selectedMapel = mapelList.find(m => m.id === mataPelajaranId);
+                    const selectedKelas = kelasList.find(k => k.id === kelasId);
+                    const filteredChapters = BUKU_PAKET_DATABASE.filter(c => {
+                      if (!selectedMapel || !selectedKelas) return false;
+                      return c.kelas.toLowerCase() === selectedKelas.nama.toLowerCase() && 
+                             c.mapelKode.toLowerCase() === selectedMapel.kode.toLowerCase();
+                    });
 
-                    <div className="flex justify-between items-center pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setShowAiConfig(!showAiConfig)}
-                        className="text-[9px] text-slate-500 hover:text-slate-400 underline cursor-pointer"
-                      >
-                        {showAiConfig ? 'Tutup Pengaturan API Key' : 'Pengaturan API Key Gemini (Opsional)'}
-                      </button>
+                    return (
+                      <div className="bg-indigo-950/25 border border-indigo-500/25 p-4 rounded-2xl space-y-4">
+                        <h4 className="text-[10px] font-extrabold text-indigo-400 flex items-center gap-1.5 uppercase">
+                          🤖 Pembuat Modul Ajar Otomatis (AI & Template Cepat)
+                        </h4>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="space-y-1.5">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase">1. Rujukan Buku Paket (Pilih Bab)</label>
+                            <select
+                              value={selectedBukuPaketId}
+                              onChange={(e) => setSelectedBukuPaketId(e.target.value)}
+                              className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
+                            >
+                              <option value="">-- Tanpa Buku Paket (Fallback) --</option>
+                              {filteredChapters.map((ch) => (
+                                <option key={ch.id} value={ch.id}>
+                                  {ch.judulBab}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
 
-                      <button
-                        type="button"
-                        disabled={generatingAi}
-                        onClick={handleGenerateAi}
-                        className="px-4 py-2.5 bg-indigo-650 hover:bg-indigo-600 disabled:bg-indigo-600/50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-indigo-950"
-                      >
-                        {generatingAi ? <Loader2 size={13} className="animate-spin text-white" /> : '🤖'}
-                        {generatingAi ? 'Sedang Menulis Modul...' : 'Mulai Isi Otomatis'}
-                      </button>
-                    </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase">2. Pilih Tujuan Pembelajaran (TP)</label>
+                            <select
+                              value={selectedTpIdForAi}
+                              onChange={(e) => setSelectedTpIdForAi(e.target.value)}
+                              className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
+                            >
+                              <option value="">-- Pilih TP dari Prota --</option>
+                              {tpsForMapel.map((tp) => (
+                                <option key={tp.id} value={tp.id}>
+                                  {tp.deskripsi.length > 40 ? `${tp.deskripsi.substring(0, 40)}...` : tp.deskripsi}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div className="space-y-1.5">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase">3. Topik Tambahan (Opsional)</label>
+                            <input
+                              type="text"
+                              value={additionalTopicForAi}
+                              onChange={(e) => setAdditionalTopicForAi(e.target.value)}
+                              placeholder="Misal: Bab 3 halaman 45"
+                              className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
+                            />
+                          </div>
+                        </div>
 
-                    {showAiConfig && (
-                      <div className="space-y-1 pt-3 border-t border-slate-850">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">API Key Gemini Anda</label>
-                        <input
-                          type="password"
-                          value={geminiKey}
-                          onChange={(e) => {
-                            setGeminiKey(e.target.value);
-                            localStorage.setItem('gemini_api_key', e.target.value);
-                          }}
-                          placeholder="AIzaSy..."
-                          className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500"
-                        />
-                        <p className="text-[8px] text-slate-500">API Key disimpan secara lokal di browser Anda. Jika kosong, sistem menggunakan template offline server secara otomatis.</p>
+                        <div className="flex justify-between items-center pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setShowAiConfig(!showAiConfig)}
+                            className="text-[9px] text-slate-500 hover:text-slate-400 underline cursor-pointer"
+                          >
+                            {showAiConfig ? 'Tutup Pengaturan API Key' : 'Pengaturan API Key Gemini (Opsional)'}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={generatingAi}
+                            onClick={handleGenerateAi}
+                            className="px-4 py-2.5 bg-indigo-650 hover:bg-indigo-600 disabled:bg-indigo-600/50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-indigo-950"
+                          >
+                            {generatingAi ? <Loader2 size={13} className="animate-spin text-white" /> : '🤖'}
+                            {generatingAi ? 'Sedang Menulis Modul...' : 'Mulai Isi Otomatis'}
+                          </button>
+                        </div>
+
+                        {showAiConfig && (
+                          <div className="space-y-1 pt-3 border-t border-slate-850">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase">API Key Gemini Anda</label>
+                            <input
+                              type="password"
+                              value={geminiKey}
+                              onChange={(e) => {
+                                setGeminiKey(e.target.value);
+                                localStorage.setItem('gemini_api_key', e.target.value);
+                              }}
+                              placeholder="AIzaSy..."
+                              className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500"
+                            />
+                            <p className="text-[8px] text-slate-500">API Key disimpan secara lokal di browser Anda. Jika kosong, sistem menggunakan template offline server secara otomatis.</p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Judul Modul Ajar</label>

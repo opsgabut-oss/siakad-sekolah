@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { BUKU_PAKET_DATABASE } from '@/lib/bukuPaket';
 
 function generateOfflineTemplate(mapelNama: string, kelasNama: string, tpDeskripsi: string, topik: string) {
   const finalTopic = tpDeskripsi || topik || 'Materi Pembelajaran';
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
     mataPelajaranId, 
     kelasId, 
     topik, 
+    bukuPaketChapterId,
     apiKey: clientApiKey 
   } = body;
 
@@ -83,23 +85,43 @@ export async function POST(request: Request) {
     if (tp) tpDeskripsi = tp.deskripsi;
   }
 
+  // Cari chapter dari Buku Paket Database offline jika ada
+  const selectedChapter = bukuPaketChapterId 
+    ? BUKU_PAKET_DATABASE.find(c => c.id === bukuPaketChapterId)
+    : null;
+
   const apiKey = clientApiKey?.trim() || process.env.GEMINI_API_KEY || '';
 
-  // Jika API Key kosong, langsung gunakan Offline Generator (cepat dan pasti sukses)
+  // Jika API Key kosong, gunakan Offline Generator (menggunakan chapter yang dipilih atau fallback umum)
   if (!apiKey) {
+    if (selectedChapter) {
+      return NextResponse.json(selectedChapter);
+    }
     const offlineResult = generateOfflineTemplate(mapelNama, kelasNama, tpDeskripsi, topik);
     return NextResponse.json(offlineResult);
   }
 
   try {
     // Susun prompt untuk Gemini
-    const prompt = `Buatkan Modul Ajar Kurikulum Merdeka tingkat Sekolah Dasar (SD) yang sangat lengkap dan profesional (bukan ringkasan) berdasarkan parameter berikut:
+    let prompt = `Buatkan Modul Ajar Kurikulum Merdeka tingkat Sekolah Dasar (SD) yang sangat lengkap dan profesional (bukan ringkasan) berdasarkan parameter berikut:
 - Mata Pelajaran: ${mapelNama || 'Mata Pelajaran SD'}
 - Kelas: ${kelasNama || 'SD'}
 - Tujuan Pembelajaran (TP): ${tpDeskripsi || topik || 'Materi Pembelajaran'}
-- Topik / Tema Tambahan: ${topik || '-'}
+- Topik / Tema Tambahan: ${topik || '-'}\n`;
 
-Anda harus menghasilkan output dalam format JSON objek dengan kunci-kunci berikut (tanpa markdown wrapper \`\`\`json atau sejenisnya, hanya string JSON mentah utuh):
+    if (selectedChapter) {
+      prompt += `\nAnda wajib mengacu pada kerangka buku paket resmi berikut untuk menyusun materi:\n`;
+      prompt += `- Judul Bab: ${selectedChapter.judulBab}\n`;
+      prompt += `- Kompetensi Awal: ${selectedChapter.kompetensiAwal}\n`;
+      prompt += `- Tujuan Pembelajaran Buku: ${selectedChapter.tujuanPembelajaranText}\n`;
+      prompt += `- Pemahaman Bermakna Buku: ${selectedChapter.pemahamanBermakna}\n`;
+      prompt += `- Pertanyaan Pemantik Buku: ${selectedChapter.pertanyaanPemantik}\n`;
+      prompt += `- Kegiatan Pembelajaran Buku: ${selectedChapter.kegiatanPendahuluan} ${selectedChapter.kegiatanInti} ${selectedChapter.kegiatanPenutup}\n`;
+      prompt += `- Rujukan Daftar Pustaka: ${selectedChapter.daftarPustaka}\n\n`;
+      prompt += `Tugas Anda adalah memodifikasi, memperluas, dan melengkapi seluruh bagian di atas menjadi draf modul ajar utuh kelas yang mengesankan, detail, dan formal.`;
+    }
+
+    prompt += `\n\nAnda harus menghasilkan output dalam format JSON objek dengan kunci-kunci berikut (tanpa markdown wrapper \`\`\`json atau sejenisnya, hanya string JSON mentah utuh):
 {
   "judul": "Judul modul ajar yang menarik dan sesuai dengan materi (contoh: Modul Ajar Matematika - Pembagian Pecahan Kelas V)",
   "semester": "Ganjil atau Genap (sesuaikan dengan materi pembelajaran yang paling masuk akal)",
@@ -126,14 +148,14 @@ Anda harus menghasilkan output dalam format JSON objek dengan kunci-kunci beriku
 }
 
 Catatan penting:
-- Setiap konten deskripsi kegiatan (pendahuluan, inti, penutup) harus ditulis secara lengkap dan rinci, tidak boleh disingkat.
+- Setiap konten deskripsi kegiatan (pendahuluan, inti, penutup) harus ditulis secara lengkap, panjang, dan rinci, tidak boleh disingkat.
 - Gunakan bahasa Indonesia yang baik, benar, formal, dan santun.
 - Jangan menyertakan tanda petik tiga (\`\`\`json) di awal maupun akhir output. Berikan JSON valid mentah.`;
 
     // Panggil Gemini API (menggunakan model 1.5-flash yang sangat stabil di free tier)
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
-    // Set timeout 10 detik agar tidak hang
+    // Set timeout 12 detik agar tidak hang
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
@@ -157,7 +179,8 @@ Catatan penting:
 
     if (!response.ok) {
       // Jika API error, fallback otomatis ke template offline yang rapi
-      console.warn('Gemini API returned error code. Falling back to offline generator.');
+      console.warn('Gemini API returned error. Falling back to offline generator.');
+      if (selectedChapter) return NextResponse.json(selectedChapter);
       const offlineResult = generateOfflineTemplate(mapelNama, kelasNama, tpDeskripsi, topik);
       return NextResponse.json(offlineResult);
     }
@@ -175,6 +198,7 @@ Catatan penting:
   } catch (error) {
     // Tangkap semua error (timeout, salah kunci, dll) dan alihkan ke generator offline agar pengguna tidak terganggu
     console.error('Gemini API failed or timed out. Falling back to offline generator.', error);
+    if (selectedChapter) return NextResponse.json(selectedChapter);
     const offlineResult = generateOfflineTemplate(mapelNama, kelasNama, tpDeskripsi, topik);
     return NextResponse.json(offlineResult);
   }

@@ -59,7 +59,17 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
 
   // Hitung jumlah hari efektif belajar (jumlah hari di mana ada minimal satu siswa diabsen)
   const uniqueDates = Array.from(new Set(absensiRecords.map((r) => r.tanggal.toISOString().split('T')[0])));
-  const totalHariEfektif = uniqueDates.length || 20; // default 20 hari jika belum ada data
+  
+  // Hitung default hari kerja (Senin-Sabtu) untuk bulan ini jika belum ada data absensi
+  let defaultHariEfektif = 0;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    if (date.getDay() !== 0) { // Bukan hari Minggu (0)
+      defaultHariEfektif++;
+    }
+  }
+  const totalHariEfektif = uniqueDates.length || defaultHariEfektif;
 
   const rows = siswaList.map((siswa, index) => {
     const siswaAbsensi = absensiRecords.filter((r) => r.siswaId === siswa.id);
@@ -91,7 +101,6 @@ export default async function RekapAbsensiPrintPage({ searchParams }: PageProps)
   const tanggalLaporan = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
   // Hitung jumlah hari dalam bulan tersebut
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
   const dayNumbers = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (

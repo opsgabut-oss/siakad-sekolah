@@ -67,6 +67,7 @@ model Kelas {
   waliKelas     Guru?             @relation(fields: [waliKelasId], references: [id], name: "WaliKelas", onDelete: SetNull)
   
   jurnalHarian  JurnalHarian[]
+  modulAjar     ModulAjar[]
 }
 
 model Guru {
@@ -87,6 +88,7 @@ model Guru {
   noAbsen      Int?             // Nomor urut manual guru untuk absensi
   pangkat      String?          // Pangkat guru
   golongan     String?          // Golongan guru
+  modulAjar    ModulAjar[]
 }
 
 model AbsensiGuru {
@@ -126,6 +128,7 @@ model Siswa {
   pelanggaran    PelanggaranSiswa[]
   catatanBK      CatatanBK[]
   noAbsen        Int?             // Nomor absen manual siswa
+  capaianTP      CapaianTP[]
 }
 
 model Absensi {
@@ -146,9 +149,11 @@ model MataPelajaran {
   id           String            @id @default(uuid())
   nama         String            // e.g. "Matematika"
   kode         String            @unique // e.g. "MTK"
-  jadwal       JadwalPelajaran[]
-  nilai        Nilai[]
-  jurnalHarian JurnalHarian[]
+  jadwal             JadwalPelajaran[]
+  nilai              Nilai[]
+  jurnalHarian       JurnalHarian[]
+  tujuanPembelajaran TujuanPembelajaran[]
+  modulAjar          ModulAjar[]
 }
 
 model JadwalPelajaran {
@@ -263,5 +268,64 @@ model ProfilSekolah {
   nipKepsek      String?  @default("197408122005011002")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model TujuanPembelajaran {
+  id              String        @id @default(uuid())
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  deskripsi       String        // e.g. "Membaca dan menulis bilangan cacah sampai 10.000"
+  kktp            Int           @default(70) // Batas ketuntasan minimal
+  alokasiJP       Int           @default(4)  // Jumlah jam pelajaran (untuk Prota)
+  semester        Int           @default(1)  // 1: Ganjil, 2: Genap
+  
+  capaianSiswa    CapaianTP[]
+  promesMinggu    PromesMinggu[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model PromesMinggu {
+  id                   String             @id @default(uuid())
+  tujuanPembelajaranId String
+  tujuanPembelajaran   TujuanPembelajaran @relation(fields: [tujuanPembelajaranId], references: [id], onDelete: Cascade)
+  bulan                Int                // 1-12 (misal: 7 untuk Juli)
+  mingguKe             Int                // 1-5 (minggu ke-1 sampai ke-5 dalam bulan tersebut)
+  
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@unique([tujuanPembelajaranId, bulan, mingguKe])
+}
+
+model CapaianTP {
+  id                   String             @id @default(uuid())
+  siswaId              String
+  siswa                Siswa              @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  tujuanPembelajaranId String
+  tujuanPembelajaran   TujuanPembelajaran @relation(fields: [tujuanPembelajaranId], references: [id], onDelete: Cascade)
+  tercapai             Boolean            @default(true) // true: Tercapai, false: Perlu Bimbingan
+  
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@unique([siswaId, tujuanPembelajaranId])
+}
+
+model ModulAjar {
+  id              String        @id @default(uuid())
+  judul           String
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  kelasId         String?
+  kelas           Kelas?        @relation(fields: [kelasId], references: [id], onDelete: SetNull)
+  guruId          String
+  guru            Guru          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  informasiUmum   Json
+  komponenInti    Json
+  lampiran        Json?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 

@@ -133,6 +133,13 @@ export default async function BKLayout({
                 Monitoring Jurnal
               </Link>
               <Link
+                href="/bk/monitoring/modul-ajar"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+              >
+                <BookOpen size={18} />
+                Supervisi Modul Ajar
+              </Link>
+              <Link
                 href="/bk/monitoring/nilai"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
               >

@@ -1,0 +1,800 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { BookOpen, Plus, Trash2, Edit3, Loader2, X, Printer, Check, Info, FileText, ChevronRight, ChevronLeft, Save } from 'lucide-react';
+
+interface Kelas {
+  id: string;
+  nama: string;
+}
+
+interface Mapel {
+  id: string;
+  nama: string;
+  kode: string;
+}
+
+interface ModulAjar {
+  id: string;
+  judul: string;
+  mataPelajaranId: string;
+  kelasId: string | null;
+  mataPelajaran: { nama: string; kode: string };
+  kelas: { nama: string } | null;
+  informasiUmum: any;
+  komponenInti: any;
+  lampiran: any;
+  updatedAt: string;
+}
+
+const DIMENSI_PROFIL_LULUSAN = [
+  'Keimanan dan Ketakwaan (terhadap Tuhan YME & Berakhlak Mulia)',
+  'Kewargaan',
+  'Penalaran Kritis',
+  'Kreativitas',
+  'Kolaborasi',
+  'Kemandirian',
+  'Kesehatan',
+  'Komunikasi'
+];
+
+export default function GuruModulAjarPage() {
+  const [kelasList, setKelasList] = useState<Kelas[]>([]);
+  const [mapelList, setMapelList] = useState<Mapel[]>([]);
+  const [modulList, setModulList] = useState<ModulAjar[]>([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Form Wizard State
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // Form Fields State
+  const [judul, setJudul] = useState('');
+  const [kelasId, setKelasId] = useState('');
+  const [mataPelajaranId, setMataPelajaranId] = useState('');
+  
+  // Step 1: Informasi Umum
+  const [semester, setSemester] = useState('Ganjil');
+  const [alokasiWaktu, setAlokasiWaktu] = useState('2 JP (2 x 35 Menit)');
+  const [kompetensiAwal, setKompetensiAwal] = useState('');
+  const [saranaPrasarana, setSaranaPrasarana] = useState('');
+  const [targetPeserta, setTargetPeserta] = useState('Siswa Reguler');
+  const [modelPembelajaran, setModelPembelajaran] = useState('Tatap Muka / Project-Based Learning');
+
+  // Step 2: Dimensi Profil Lulusan (Permendikdasmen 10/2025)
+  const [profilLulusan, setProfilLulusan] = useState<string[]>([]);
+
+  // Step 3: Komponen Inti
+  const [tpsForMapel, setTpsForMapel] = useState<any[]>([]);
+  const [selectedTpIds, setSelectedTpIds] = useState<string[]>([]);
+  const [manualTpText, setManualTpText] = useState('');
+  const [pemahamanBermakna, setPemahamanBermakna] = useState('');
+  const [pertanyaanPemantik, setPertanyaanPemantik] = useState('');
+  const [asesmenDiagnostik, setAsesmenDiagnostik] = useState('Tanya Jawab lisan sebelum KBM');
+  const [asesmenFormatif, setAsesmenFormatif] = useState('Observasi keaktifan dan LKPD siswa');
+  const [asesmenSumatif, setAsesmenSumatif] = useState('Penilaian hasil proyek akhir');
+
+  // Step 4: Kegiatan Pembelajaran
+  const [kegiatanPendahuluan, setKegiatanPendahuluan] = useState('');
+  const [kegiatanInti, setKegiatanInti] = useState('');
+  const [kegiatanPenutup, setKegiatanPenutup] = useState('');
+
+  // Step 5: Lampiran
+  const [lkpd, setLkpd] = useState('');
+  const [glosarium, setGlosarium] = useState('');
+  const [daftarPustaka, setDaftarPustaka] = useState('');
+
+  useEffect(() => {
+    fetchConfigs();
+  }, []);
+
+  useEffect(() => {
+    if (mataPelajaranId) {
+      fetchTpsForMapel(mataPelajaranId);
+    } else {
+      setTpsForMapel([]);
+    }
+  }, [mataPelajaranId]);
+
+  const fetchConfigs = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const resKelas = await fetch('/api/admin/kelas');
+      const resMapel = await fetch('/api/admin/mapel');
+      const resModul = await fetch('/api/guru/modul-ajar');
+
+      if (!resKelas.ok) throw new Error('Gagal mengambil data kelas');
+      if (!resMapel.ok) throw new Error('Gagal mengambil data mata pelajaran');
+      if (!resModul.ok) throw new Error('Gagal mengambil data modul ajar');
+
+      const dataKelas = await resKelas.json();
+      const dataMapel = await resMapel.json();
+      const dataModul = await resModul.json();
+
+      setKelasList(dataKelas);
+      setMapelList(dataMapel);
+      setModulList(dataModul);
+
+      if (dataKelas.length > 0) setKelasId(dataKelas[0].id);
+      if (dataMapel.length > 0) setMataPelajaranId(dataMapel[0].id);
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan saat memuat data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTpsForMapel = async (mapelId: string) => {
+    try {
+      const res = await fetch(`/api/guru/tujuan-pembelajaran?mataPelajaranId=${mapelId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTpsForMapel(data);
+      }
+    } catch (e) {
+      console.error('Error fetching TPs for mapel', e);
+    }
+  };
+
+  const handleOpenAdd = () => {
+    setEditingId(null);
+    setJudul('');
+    if (kelasList.length > 0) setKelasId(kelasList[0].id);
+    if (mapelList.length > 0) setMataPelajaranId(mapelList[0].id);
+    
+    setSemester('Ganjil');
+    setAlokasiWaktu('2 JP (2 x 35 Menit)');
+    setKompetensiAwal('');
+    setSaranaPrasarana('');
+    setTargetPeserta('Siswa Reguler');
+    setModelPembelajaran('Tatap Muka / Project-Based Learning');
+    setProfilLulusan([]);
+    setSelectedTpIds([]);
+    setManualTpText('');
+    setPemahamanBermakna('');
+    setPertanyaanPemantik('');
+    setAsesmenDiagnostik('Tanya Jawab lisan sebelum KBM');
+    setAsesmenFormatif('Observasi keaktifan dan LKPD siswa');
+    setAsesmenSumatif('Penilaian hasil proyek akhir');
+    setKegiatanPendahuluan('');
+    setKegiatanInti('');
+    setKegiatanPenutup('');
+    setLkpd('');
+    setGlosarium('');
+    setDaftarPustaka('');
+
+    setCurrentStep(1);
+    setError('');
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (item: ModulAjar) => {
+    setEditingId(item.id);
+    setJudul(item.judul);
+    setKelasId(item.kelasId || '');
+    setMataPelajaranId(item.mataPelajaranId);
+
+    const info = item.informasiUmum || {};
+    setSemester(info.semester || 'Ganjil');
+    setAlokasiWaktu(info.alokasiWaktu || '2 JP (2 x 35 Menit)');
+    setKompetensiAwal(info.kompetensiAwal || '');
+    setSaranaPrasarana(info.saranaPrasarana || '');
+    setTargetPeserta(info.targetPeserta || 'Siswa Reguler');
+    setModelPembelajaran(info.modelPembelajaran || 'Tatap Muka / Project-Based Learning');
+    setProfilLulusan(info.profilLulusan || []);
+
+    const komp = item.komponenInti || {};
+    setManualTpText(komp.tujuanPembelajaran || '');
+    setPemahamanBermakna(komp.pemahamanBermakna || '');
+    setPertanyaanPemantik(komp.pertanyaanPemantik || '');
+    setAsesmenDiagnostik(komp.asesmenDiagnostik || 'Tanya Jawab lisan sebelum KBM');
+    setAsesmenFormatif(komp.asesmenFormatif || 'Observasi keaktifan dan LKPD siswa');
+    setAsesmenSumatif(komp.asesmenSumatif || 'Penilaian hasil proyek akhir');
+    setKegiatanPendahuluan(komp.kegiatanPendahuluan || '');
+    setKegiatanInti(komp.kegiatanInti || '');
+    setKegiatanPenutup(komp.kegiatanPenutup || '');
+
+    const lamp = item.lampiran || {};
+    setLkpd(lamp.lkpd || '');
+    setGlosarium(lamp.glosarium || '');
+    setDaftarPustaka(lamp.daftarPustaka || '');
+
+    setCurrentStep(1);
+    setError('');
+    setShowModal(true);
+  };
+
+  const handleProfilLulusanChange = (dimensi: string, checked: boolean) => {
+    if (checked) {
+      setProfilLulusan(prev => [...prev, dimensi]);
+    } else {
+      setProfilLulusan(prev => prev.filter(d => d !== dimensi));
+    }
+  };
+
+  const handleTpCheckboxChange = (tpId: string, tpDesc: string, checked: boolean) => {
+    let nextIds = [];
+    if (checked) {
+      nextIds = [...selectedTpIds, tpId];
+    } else {
+      nextIds = selectedTpIds.filter(id => id !== tpId);
+    }
+    setSelectedTpIds(nextIds);
+
+    // Otomatis update teks deskripsi TP komponen inti
+    const selectedDescriptions = tpsForMapel
+      .filter(tp => nextIds.includes(tp.id))
+      .map((tp, idx) => `${idx + 1}. ${tp.deskripsi}`)
+      .join('\n');
+    setManualTpText(selectedDescriptions);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!judul || !mataPelajaranId) {
+      setError('Judul dan Mata Pelajaran wajib diisi');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    setSuccess('');
+
+    const informasiUmum = {
+      semester,
+      alokasiWaktu,
+      kompetensiAwal,
+      saranaPrasarana,
+      targetPeserta,
+      modelPembelajaran,
+      profilLulusan
+    };
+
+    const komponenInti = {
+      tujuanPembelajaran: manualTpText,
+      pemahamanBermakna,
+      pertanyaanPemantik,
+      kegiatanPendahuluan,
+      kegiatanInti,
+      kegiatanPenutup,
+      asesmenDiagnostik,
+      asesmenFormatif,
+      asesmenSumatif
+    };
+
+    const lampiran = {
+      lkpd,
+      glosarium,
+      daftarPustaka
+    };
+
+    try {
+      const url = '/api/guru/modul-ajar';
+      const method = editingId ? 'POST' : 'POST'; // POST handles both create (no id) and update (with id)
+      const body = {
+        id: editingId || undefined,
+        judul,
+        kelasId: kelasId || null,
+        mataPelajaranId,
+        informasiUmum,
+        komponenInti,
+        lampiran
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal menyimpan modul ajar');
+
+      setSuccess(editingId ? 'Modul ajar berhasil diperbarui' : 'Modul ajar berhasil dibuat');
+      setShowModal(false);
+      fetchConfigs();
+    } catch (err: any) {
+      setError(err.message || 'Gagal menyimpan modul ajar');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus modul ajar ini?')) return;
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch(`/api/guru/modul-ajar?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal menghapus modul ajar');
+
+      setSuccess('Modul ajar berhasil dihapus');
+      fetchConfigs();
+    } catch (err: any) {
+      setError(err.message || 'Gagal menghapus modul ajar');
+    }
+  };
+
+  return (
+    <div className="space-y-6 flex-1 flex flex-col">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2 select-none">
+            <BookOpen className="text-indigo-400" />
+            Dasbor Modul Ajar (RPP Plus)
+          </h1>
+          <p className="text-slate-400 mt-1 text-xs">Penyusunan Modul Ajar Kurikulum Merdeka Terintegrasi & Siap Cetak.</p>
+        </div>
+        <button
+          onClick={handleOpenAdd}
+          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs shadow-lg shadow-indigo-500/20 transition-all cursor-pointer w-full sm:w-auto justify-center"
+        >
+          <Plus size={14} />
+          Buat Modul Ajar Baru
+        </button>
+      </div>
+
+      {error && (
+        <div className="p-4 bg-rose-950/60 border border-rose-800 text-rose-300 rounded-2xl text-xs font-semibold select-none">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="p-4 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded-2xl text-xs font-semibold select-none">
+          {checkIcon}
+          {success}
+        </div>
+      )}
+
+      {/* List Modul Ajar */}
+      {loading ? (
+        <div className="flex justify-center items-center py-20 flex-1">
+          <Loader2 className="animate-spin text-indigo-400" size={28} />
+        </div>
+      ) : modulList.length === 0 ? (
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-12 text-center my-auto">
+          <FileText className="mx-auto text-slate-700 mb-3" size={40} />
+          <p className="text-slate-400 text-sm font-semibold">Belum ada modul ajar yang dibuat. Mulai buat dengan menekan tombol di atas.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {modulList.map((item) => (
+            <div
+              key={item.id}
+              className="bg-slate-900 border border-slate-850 rounded-2xl p-5 space-y-3 shadow-md hover:border-slate-800 transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold text-indigo-400">
+                  {item.mataPelajaran.nama} ({item.mataPelajaran.kode}) {item.kelas ? `• ${item.kelas.nama}` : ''}
+                </div>
+                <h4 className="text-sm font-bold text-slate-200">{item.judul}</h4>
+                <p className="text-[9px] text-slate-500 font-semibold">
+                  Terakhir Diperbarui: {new Date(item.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              <div className="flex gap-2 justify-end pt-3 border-t border-slate-850/60">
+                <a
+                  href={`/guru/cetak-modul?id=${item.id}`}
+                  target="_blank"
+                  className="px-3 py-1.5 bg-slate-950/60 border border-slate-850 hover:bg-slate-800 text-slate-350 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1 transition-all"
+                >
+                  <Printer size={12} /> Cetak Rapi
+                </a>
+                <button
+                  onClick={() => handleOpenEdit(item)}
+                  className="px-3 py-1.5 bg-slate-955 border border-slate-850 hover:bg-slate-800 text-indigo-400 hover:text-indigo-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                >
+                  <Edit3 size={12} /> Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-1.5 bg-slate-955 border border-slate-850 hover:bg-rose-950/20 text-slate-500 hover:text-rose-450 rounded-xl transition-all cursor-pointer"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Steps Wizard Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header Modal */}
+            <div className="p-5 border-b border-slate-800 flex justify-between items-center shrink-0">
+              <div>
+                <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
+                  <BookOpen className="text-indigo-400" size={18} />
+                  {editingId ? 'Edit Modul Ajar' : 'Susun Modul Ajar Baru'}
+                </h2>
+                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Langkah {currentStep} dari 5</div>
+              </div>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Step Indicators Bar */}
+            <div className="flex bg-slate-950/30 px-5 py-2 border-b border-slate-850/60 justify-between items-center text-[9px] font-bold text-slate-500 uppercase tracking-wider select-none shrink-0">
+              <span className={currentStep >= 1 ? 'text-indigo-400' : ''}>1. Identitas</span>
+              <ChevronRight size={10} />
+              <span className={currentStep >= 2 ? 'text-indigo-400' : ''}>2. Profil Lulusan</span>
+              <ChevronRight size={10} />
+              <span className={currentStep >= 3 ? 'text-indigo-400' : ''}>3. Inti & Asesmen</span>
+              <ChevronRight size={10} />
+              <span className={currentStep >= 4 ? 'text-indigo-400' : ''}>4. Langkah KBM</span>
+              <ChevronRight size={10} />
+              <span className={currentStep >= 5 ? 'text-indigo-400' : ''}>5. Lampiran</span>
+            </div>
+
+            {/* Form Content Scrollable */}
+            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
+              
+              {/* STEP 1: IDENTITAS & INFORMASI UMUM */}
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Judul Modul Ajar</label>
+                    <input
+                      type="text"
+                      value={judul}
+                      onChange={(e) => setJudul(e.target.value)}
+                      placeholder="Contoh: Modul Ajar Matematika - Pembagian Pecahan"
+                      className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-semibold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pilih Mata Pelajaran</label>
+                      <select
+                        value={mataPelajaranId}
+                        onChange={(e) => setMataPelajaranId(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
+                      >
+                        {mapelList.map((m) => (
+                          <option key={m.id} value={m.id}>{m.nama} ({m.kode})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pilih Kelas</label>
+                      <select
+                        value={kelasId}
+                        onChange={(e) => setKelasId(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
+                      >
+                        {kelasList.map((k) => (
+                          <option key={k.id} value={k.id}>{k.nama}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Semester</label>
+                      <select
+                        value={semester}
+                        onChange={(e) => setSemester(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden"
+                      >
+                        <option value="Ganjil">Semester I (Ganjil)</option>
+                        <option value="Genap">Semester II (Genap)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Alokasi Waktu</label>
+                      <input
+                        type="text"
+                        value={alokasiWaktu}
+                        onChange={(e) => setAlokasiWaktu(e.target.value)}
+                        placeholder="Contoh: 2 JP (2 x 35 Menit)"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kompetensi Awal (Kemampuan Prasyarat Siswa)</label>
+                    <textarea
+                      value={kompetensiAwal}
+                      onChange={(e) => setKompetensiAwal(e.target.value)}
+                      placeholder="Contoh: Siswa sudah memahami konsep perkalian bilangan cacah dasar..."
+                      rows={2}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sarana & Prasarana</label>
+                    <input
+                      type="text"
+                      value={saranaPrasarana}
+                      onChange={(e) => setSaranaPrasarana(e.target.value)}
+                      placeholder="Contoh: Laptop, LCD Proyektor, Internet, Buku Paket, LKPD..."
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Target Peserta Didik</label>
+                      <input
+                        type="text"
+                        value={targetPeserta}
+                        onChange={(e) => setTargetPeserta(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Model Pembelajaran</label>
+                      <input
+                        type="text"
+                        value={modelPembelajaran}
+                        onChange={(e) => setModelPembelajaran(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: 8 DIMENSI PROFIL LULUSAN (PERMENDIKDASMEN 10/2025) */}
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-indigo-950/30 border border-indigo-900/40 rounded-2xl text-[10px] text-indigo-350 leading-relaxed">
+                    <span className="font-bold flex items-center gap-1 uppercase mb-1">
+                      <Info size={12} /> Regulasi SKL Baru: Permendikdasmen No. 10/2025
+                    </span>
+                    Berdasarkan standar kelulusan terbaru dari kementerian, pilih satu atau lebih dimensi profil lulusan yang akan dikembangkan dalam modul ajar ini:
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {DIMENSI_PROFIL_LULUSAN.map((dimensi) => {
+                      const isChecked = profilLulusan.includes(dimensi);
+                      return (
+                        <label
+                          key={dimensi}
+                          className={`flex items-start p-3 rounded-2xl border transition-all cursor-pointer select-none ${
+                            isChecked 
+                              ? 'bg-indigo-950/20 border-indigo-500/50 text-white' 
+                              : 'bg-slate-950/20 border-slate-850 text-slate-450 hover:border-slate-800'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => handleProfilLulusanChange(dimensi, e.target.checked)}
+                            className="mt-0.5 rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-0 focus:ring-offset-0 shrink-0"
+                          />
+                          <span className="ml-3 text-xs font-semibold leading-tight">{dimensi}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: KOMPONEN INTI (TP, PEMAHAMAN BERMAKNA, PEMANTIK, ASESMEN) */}
+              {currentStep === 3 && (
+                <div className="space-y-4">
+                  {/* Ceklis TP otomatis */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Hubungkan Dengan Tujuan Pembelajaran (Prota)</label>
+                    {tpsForMapel.length === 0 ? (
+                      <p className="text-[10px] text-slate-500 italic">Belum ada TP terdaftar di Prota untuk mata pelajaran ini. Silakan ketik manual di bawah.</p>
+                    ) : (
+                      <div className="max-h-32 overflow-y-auto border border-slate-850 p-2.5 rounded-xl space-y-2 bg-slate-950/30">
+                        {tpsForMapel.map((tp) => {
+                          const isChecked = selectedTpIds.includes(tp.id);
+                          return (
+                            <label key={tp.id} className="flex items-start gap-2 text-xs text-slate-300 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => handleTpCheckboxChange(tp.id, tp.deskripsi, e.target.checked)}
+                                className="mt-0.5 rounded border-slate-800 text-indigo-600 focus:ring-0"
+                              />
+                              <span className="leading-snug">{tp.deskripsi} (S{tp.semester} - {tp.alokasiJP}JP)</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Teks Deskripsi Tujuan Pembelajaran (Di Modul)</label>
+                    <textarea
+                      value={manualTpText}
+                      onChange={(e) => setManualTpText(e.target.value)}
+                      placeholder="Pilih dari ceklis di atas atau ketik manual tujuan pembelajaran di sini..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pemahaman Bermakna (Manfaat Pembelajaran)</label>
+                    <textarea
+                      value={pemahamanBermakna}
+                      onChange={(e) => setPemahamanBermakna(e.target.value)}
+                      placeholder="Contoh: Dengan memahami pecahan, siswa dapat membagi makanan atau benda sama besar..."
+                      rows={2}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pertanyaan Pemantik (Tulis per baris)</label>
+                    <textarea
+                      value={pertanyaanPemantik}
+                      onChange={(e) => setPertanyaanPemantik(e.target.value)}
+                      placeholder="Bagaimana cara membagi kue untuk 4 orang?&#10;Apakah pecahan itu selalu lebih kecil dari 1?"
+                      rows={2}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Asesmen Diagnostik</label>
+                      <input type="text" value={asesmenDiagnostik} onChange={(e) => setAsesmenDiagnostik(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Asesmen Formatif</label>
+                      <input type="text" value={asesmenFormatif} onChange={(e) => setAsesmenFormatif(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Asesmen Sumatif</label>
+                      <input type="text" value={asesmenSumatif} onChange={(e) => setAsesmenSumatif(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 4: KEGIATAN PEMBELAJARAN (PENDAHULUAN, INTI, PENUTUP) */}
+              {currentStep === 4 && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kegiatan Pendahuluan</label>
+                    <textarea
+                      value={kegiatanPendahuluan}
+                      onChange={(e) => setKegiatanPendahuluan(e.target.value)}
+                      placeholder="1. Orientasi: Guru membuka salam...&#10;2. Apersepsi: Guru menguji pemahaman...&#10;3. Motivasi: Menjelaskan tujuan belajar..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kegiatan Inti (Skenario Utama Pembelajaran)</label>
+                    <textarea
+                      value={kegiatanInti}
+                      onChange={(e) => setKegiatanInti(e.target.value)}
+                      placeholder="1. Siswa membentuk kelompok...&#10;2. Guru membagikan LKPD...&#10;3. Siswa berdiskusi memecahkan masalah..."
+                      rows={5}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kegiatan Penutup</label>
+                    <textarea
+                      value={kegiatanPenutup}
+                      onChange={(e) => setKegiatanPenutup(e.target.value)}
+                      placeholder="1. Siswa dibimbing merangkum kesimpulan...&#10;2. Guru melakukan evaluasi singkat...&#10;3. Berdoa bersama dan salam penutup..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none leading-relaxed"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 5: LAMPIRAN (LKPD, GLOSARIUM, DAFTAR PUSTAKA) */}
+              {currentStep === 5 && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Lembar Kerja Peserta Didik (LKPD - Tulis Deskripsi/Soal Tugas)</label>
+                    <textarea
+                      value={lkpd}
+                      onChange={(e) => setLkpd(e.target.value)}
+                      placeholder="Soal Latihan Kelompok:&#10;1. Selesaikan penjumlahan pecahan berikut...&#10;2. Tuliskan kesimpulan kelompok Anda..."
+                      rows={4}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Glosarium (Daftar Istilah Sulit)</label>
+                    <textarea
+                      value={glosarium}
+                      onChange={(e) => setGlosarium(e.target.value)}
+                      placeholder="Pecahan: Bilangan yang menyatakan bagian dari sesuatu yang utuh..."
+                      rows={2}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Daftar Pustaka</label>
+                    <textarea
+                      value={daftarPustaka}
+                      onChange={(e) => setDaftarPustaka(e.target.value)}
+                      placeholder="Buku Guru Matematika SD Kelas V, Kemendikdasmen, 2025..."
+                      rows={2}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Wizard Bottom Buttons Navigation */}
+              <div className="flex justify-between items-center pt-4 border-t border-slate-850 shrink-0">
+                <div>
+                  {currentStep > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(prev => prev - 1)}
+                      className="py-2.5 px-4 bg-slate-850 hover:bg-slate-800 text-slate-350 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
+                    >
+                      <ChevronLeft size={14} /> Sebelumnya
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="py-2.5 px-4 bg-slate-950/20 hover:bg-slate-950/40 text-slate-500 rounded-xl text-xs font-semibold cursor-pointer border border-slate-850"
+                  >
+                    Batal
+                  </button>
+                  {currentStep < 5 ? (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(prev => prev + 1)}
+                      className="py-2.5 px-4 bg-slate-800 hover:bg-slate-750 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
+                    >
+                      Berikutnya <ChevronRight size={14} />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="py-2.5 px-5 bg-linear-to-r from-indigo-500 to-violet-650 hover:from-indigo-600 hover:to-violet-750 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      {submitting ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                      {editingId ? 'Simpan Perubahan' : 'Terbitkan Modul'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const checkIcon = (
+  <svg className="w-4 h-4 text-emerald-400 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  </svg>
+);

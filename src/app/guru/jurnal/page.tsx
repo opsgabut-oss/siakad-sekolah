@@ -10,7 +10,8 @@ import {
   X, 
   Calendar,
   AlertCircle,
-  FileText
+  FileText,
+  Printer
 } from 'lucide-react';
 
 interface Kelas {
@@ -170,13 +171,25 @@ export default function GuruJurnalPage() {
           </h1>
           <p className="text-slate-400 mt-1 text-xs">Catat agenda mengajar, materi pembelajaran, dan catatan kelas harian.</p>
         </div>
-        <button
-          onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs shadow-lg shadow-indigo-500/20 transition-all cursor-pointer w-full sm:w-auto justify-center"
-        >
-          <Plus size={14} />
-          Tambah Jurnal Harian
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          {jurnalList.length > 0 && (
+            <a
+              href="/guru/cetak-jurnal"
+              target="_blank"
+              className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold text-xs transition-all w-full sm:w-auto justify-center"
+            >
+              <Printer size={14} />
+              Cetak Jurnal
+            </a>
+          )}
+          <button
+            onClick={handleOpenAdd}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs shadow-lg shadow-indigo-500/20 transition-all cursor-pointer w-full sm:w-auto justify-center"
+          >
+            <Plus size={14} />
+            Tambah Jurnal Harian
+          </button>
+        </div>
       </div>
 
       {error && (

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import Link from 'next/link';
-import { School, Calendar, GraduationCap, BookOpen } from 'lucide-react';
+import { School, Calendar, GraduationCap, BookOpen, CalendarRange, FileText } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import MiniLogoutButton from './MiniLogoutButton';
 
@@ -20,7 +20,7 @@ export default async function GuruLayout({
   const profil = await prisma.profilSekolah.findFirst();
 
   return (
-    <div className="flex-1 min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="flex-1 min-h-screen bg-slate-955 text-slate-100 flex flex-col">
       {/* Top Mobile Navbar */}
       <header className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800 shadow-md">
         <div className="px-4 py-3 flex items-center justify-between max-w-5xl mx-auto w-full">
@@ -37,7 +37,7 @@ export default async function GuruLayout({
               <h2 className="font-extrabold text-xs text-white tracking-wide leading-none truncate max-w-[120px]" title={profil?.namaSekolah || 'SIAKAD GURU'}>
                 {profil?.namaSekolah || 'SIAKAD GURU'}
               </h2>
-              <p className="text-[8px] text-slate-500 font-semibold tracking-wider uppercase mt-0.5">Panel Absensi</p>
+              <p className="text-[8px] text-slate-500 font-semibold tracking-wider uppercase mt-0.5">Panel Mengajar</p>
             </div>
           </Link>
 
@@ -61,35 +61,49 @@ export default async function GuruLayout({
       </main>
 
       {/* Footer Nav / Quick Actions (Mobile Bottom Bar) */}
-      <footer className="bg-slate-900 border-t border-slate-800 py-3 px-4 sticky bottom-0 z-40">
-        <div className="max-w-2xl mx-auto flex items-center justify-around gap-2 text-center">
+      <footer className="bg-slate-900 border-t border-slate-800 py-2.5 px-2 sticky bottom-0 z-40">
+        <div className="max-w-2xl mx-auto flex items-center justify-around gap-1 text-center">
           <Link
             href="/guru/dashboard"
-            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-400 select-none transition-colors"
+            className="flex flex-col items-center gap-1 text-[9px] font-bold text-slate-400 hover:text-indigo-400 select-none transition-colors"
           >
-            <School size={18} />
-            Absensi
+            <School size={17} />
+            Absen
           </Link>
           <Link
             href="/guru/jadwal"
-            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-400 select-none transition-colors"
+            className="flex flex-col items-center gap-1 text-[9px] font-bold text-slate-400 hover:text-indigo-400 select-none transition-colors"
           >
-            <Calendar size={18} />
-            Jadwal Ajar
+            <Calendar size={17} />
+            Jadwal
           </Link>
           <Link
             href="/guru/nilai"
-            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-400 select-none transition-colors"
+            className="flex flex-col items-center gap-1 text-[9px] font-bold text-slate-400 hover:text-indigo-400 select-none transition-colors"
           >
-            <GraduationCap size={18} />
-            Input Nilai
+            <GraduationCap size={17} />
+            Penilaian
+          </Link>
+          <Link
+            href="/guru/promes"
+            className="flex flex-col items-center gap-1 text-[9px] font-bold text-slate-400 hover:text-indigo-400 select-none transition-colors"
+          >
+            <CalendarRange size={17} />
+            Promes
+          </Link>
+          <Link
+            href="/guru/modul-ajar"
+            className="flex flex-col items-center gap-1 text-[9px] font-bold text-slate-400 hover:text-indigo-400 select-none transition-colors"
+          >
+            <FileText size={17} />
+            Modul Ajar
           </Link>
           <Link
             href="/guru/jurnal"
-            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-400 select-none transition-colors"
+            className="flex flex-col items-center gap-1 text-[9px] font-bold text-slate-400 hover:text-indigo-400 select-none transition-colors"
           >
-            <BookOpen size={18} />
-            Jurnal Harian
+            <BookOpen size={17} />
+            Jurnal
           </Link>
           <MiniLogoutButton />
         </div>

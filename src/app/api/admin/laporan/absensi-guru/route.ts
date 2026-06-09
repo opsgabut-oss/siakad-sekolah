@@ -48,7 +48,17 @@ export async function GET(request: Request) {
 
     // Hitung jumlah hari aktif KBM bulan ini (jumlah hari di mana ada minimal satu guru check-in)
     const uniqueDates = Array.from(new Set(absensiRecords.map(r => r.tanggal.toISOString().split('T')[0])));
-    const totalHariKerja = uniqueDates.length || 20; // Default 20 hari jika belum ada data
+    
+    // Hitung default hari kerja (Senin-Sabtu) untuk bulan ini jika belum ada data check-in
+    let defaultHariKerja = 0;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      if (date.getDay() !== 0) { // Bukan hari Minggu (0)
+        defaultHariKerja++;
+      }
+    }
+    const totalHariKerja = uniqueDates.length || defaultHariKerja;
 
     const rows = gurus.map(g => {
       const gAbs = absensiRecords.filter(r => r.guruId === g.id);

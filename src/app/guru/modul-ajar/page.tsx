@@ -98,6 +98,48 @@ export default function GuruModulAjarPage() {
   const [generatingAi, setGeneratingAi] = useState(false);
   const [showAiConfig, setShowAiConfig] = useState(false);
 
+  // Derived helper variables for TP selection/filtering
+  const usedTpIds = modulList
+    .filter(m => m.id !== editingId)
+    .reduce((acc: string[], m) => {
+      const komp = (m.komponenInti as any) || {};
+      if (Array.isArray(komp.selectedTpIds)) {
+        return [...acc, ...komp.selectedTpIds];
+      }
+      return acc;
+    }, []);
+
+  const selectedMapel = mapelList.find(m => m.id === mataPelajaranId);
+  const selectedKelas = kelasList.find(k => k.id === kelasId);
+  const filteredChapters = BUKU_PAKET_DATABASE.filter(c => {
+    if (!selectedMapel || !selectedKelas) return false;
+    const kName = selectedKelas.nama.toLowerCase();
+    const cName = c.kelas.toLowerCase();
+    return (kName === cName || kName.startsWith(cName) || cName.startsWith(kName)) && 
+           c.mapelKode.toLowerCase() === selectedMapel.kode.toLowerCase();
+  });
+
+  const selectedChapter = BUKU_PAKET_DATABASE.find(c => c.id === selectedBukuPaketId);
+  const chapterTpTexts = selectedChapter 
+    ? selectedChapter.tujuanPembelajaranText
+        .split('\n')
+        .map(l => l.trim().replace(/^\d+\.\s*/, '').toLowerCase())
+        .filter(l => l.length > 0)
+    : [];
+
+  const displayedTps = tpsForMapel.filter(tp => {
+    // Exclude if already used in other Modul Ajar
+    if (usedTpIds.includes(tp.id)) return false;
+
+    // Filter by selected book chapter if present
+    if (selectedBukuPaketId && chapterTpTexts.length > 0) {
+      const descNorm = tp.deskripsi.toLowerCase();
+      return chapterTpTexts.some(ctp => descNorm.includes(ctp) || ctp.includes(descNorm));
+    }
+
+    return true;
+  });
+
   useEffect(() => {
     fetchConfigs();
   }, []);
@@ -233,6 +275,7 @@ export default function GuruModulAjarPage() {
     setTargetPeserta(info.targetPeserta || 'Siswa Reguler');
     setModelPembelajaran(info.modelPembelajaran || 'Tatap Muka / Project-Based Learning');
     setProfilLulusan(info.profilLulusan || []);
+    setSelectedBukuPaketId(info.selectedBukuPaketId || '');
 
     const komp = item.komponenInti || {};
     setManualTpText(komp.tujuanPembelajaran || '');
@@ -244,12 +287,12 @@ export default function GuruModulAjarPage() {
     setKegiatanPendahuluan(komp.kegiatanPendahuluan || '');
     setKegiatanInti(komp.kegiatanInti || '');
     setKegiatanPenutup(komp.kegiatanPenutup || '');
+    setSelectedTpIds(komp.selectedTpIds || []);
 
     const lamp = item.lampiran || {};
     setLkpd(lamp.lkpd || '');
     setGlosarium(lamp.glosarium || '');
     setDaftarPustaka(lamp.daftarPustaka || '');
-    setSelectedBukuPaketId('');
     setSelectedTpIdForAi('');
     setAdditionalTopicForAi('');
 
@@ -373,10 +416,12 @@ export default function GuruModulAjarPage() {
       saranaPrasarana,
       targetPeserta,
       modelPembelajaran,
-      profilLulusan
+      profilLulusan,
+      selectedBukuPaketId
     };
 
     const komponenInti = {
+      selectedTpIds,
       tujuanPembelajaran: manualTpText,
       pemahamanBermakna,
       pertanyaanPemantik,
@@ -592,48 +637,53 @@ export default function GuruModulAjarPage() {
                     </div>
                   </div>
 
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rujukan Buku Paket (Bab)</label>
+                    <select
+                      value={selectedBukuPaketId}
+                      onChange={(e) => setSelectedBukuPaketId(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
+                    >
+                      <option value="">-- Tampilkan Semua Bab & TP --</option>
+                      {filteredChapters.map((ch) => {
+                        const chTps = ch.tujuanPembelajaranText
+                          .split('\n')
+                          .map(l => l.trim().replace(/^\d+\.\s*/, ''))
+                          .filter(l => l.length > 0);
+                        const matchingTps = tpsForMapel.filter(tp => 
+                          chTps.some(ctp => tp.deskripsi.toLowerCase().includes(ctp.toLowerCase()) || ctp.toLowerCase().includes(tp.deskripsi.toLowerCase()))
+                        );
+                        const unusedMatchingTps = matchingTps.filter(tp => !usedTpIds.includes(tp.id));
+                        const countLabel = matchingTps.length > 0 
+                          ? `(${unusedMatchingTps.length}/${matchingTps.length} TP Tersisa)` 
+                          : '';
+                        return (
+                          <option key={ch.id} value={ch.id}>
+                            {ch.judulBab} {countLabel}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
                   {/* AI Generator Panel */}
                   {(() => {
-                    const selectedMapel = mapelList.find(m => m.id === mataPelajaranId);
-                    const selectedKelas = kelasList.find(k => k.id === kelasId);
-                    const filteredChapters = BUKU_PAKET_DATABASE.filter(c => {
-                      if (!selectedMapel || !selectedKelas) return false;
-                      return c.kelas.toLowerCase() === selectedKelas.nama.toLowerCase() && 
-                             c.mapelKode.toLowerCase() === selectedMapel.kode.toLowerCase();
-                    });
-
                     return (
                       <div className="bg-indigo-950/25 border border-indigo-500/25 p-4 rounded-2xl space-y-4">
                         <h4 className="text-[10px] font-extrabold text-indigo-400 flex items-center gap-1.5 uppercase">
                           🤖 Pembuat Modul Ajar Otomatis (AI & Template Cepat)
                         </h4>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase">1. Rujukan Buku Paket (Pilih Bab)</label>
-                            <select
-                              value={selectedBukuPaketId}
-                              onChange={(e) => setSelectedBukuPaketId(e.target.value)}
-                              className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
-                            >
-                              <option value="">-- Tanpa Buku Paket (Fallback) --</option>
-                              {filteredChapters.map((ch) => (
-                                <option key={ch.id} value={ch.id}>
-                                  {ch.judulBab}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase">2. Pilih Tujuan Pembelajaran (TP)</label>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase">1. Pilih Tujuan Pembelajaran (TP)</label>
                             <select
                               value={selectedTpIdForAi}
                               onChange={(e) => setSelectedTpIdForAi(e.target.value)}
                               className="w-full px-3 py-2.5 bg-slate-950 border border-slate-850 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500 font-medium"
                             >
                               <option value="">-- Pilih TP dari Prota --</option>
-                              {tpsForMapel.map((tp) => (
+                              {displayedTps.map((tp) => (
                                 <option key={tp.id} value={tp.id}>
                                   {tp.deskripsi.length > 40 ? `${tp.deskripsi.substring(0, 40)}...` : tp.deskripsi}
                                 </option>
@@ -642,7 +692,7 @@ export default function GuruModulAjarPage() {
                           </div>
                           
                           <div className="space-y-1.5">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase">3. Topik Tambahan (Opsional)</label>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase">2. Topik Tambahan (Opsional)</label>
                             <input
                               type="text"
                               value={additionalTopicForAi}
@@ -813,17 +863,21 @@ export default function GuruModulAjarPage() {
               {/* STEP 3: KOMPONEN INTI (TP, PEMAHAMAN BERMAKNA, PEMANTIK, ASESMEN) */}
               {currentStep === 3 && (
                 <div className="space-y-4">
-                  {/* Ceklis TP otomatis */}
+                  {/* Ceklis TP Otomatis */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Hubungkan Dengan Tujuan Pembelajaran (Prota)</label>
-                    {tpsForMapel.length === 0 ? (
-                      <p className="text-[10px] text-slate-500 italic">Belum ada TP terdaftar di Prota untuk mata pelajaran ini. Silakan ketik manual di bawah.</p>
+                    {displayedTps.length === 0 ? (
+                      <p className="text-[10px] text-slate-500 italic">
+                        {tpsForMapel.length === 0 
+                          ? 'Belum ada TP terdaftar di Prota untuk mata pelajaran ini. Silakan ketik manual di bawah.' 
+                          : 'Semua TP untuk Bab ini sudah selesai disusun menjadi Modul Ajar.'}
+                      </p>
                     ) : (
                       <div className="max-h-32 overflow-y-auto border border-slate-850 p-2.5 rounded-xl space-y-2 bg-slate-950/30">
-                        {tpsForMapel.map((tp) => {
+                        {displayedTps.map((tp) => {
                           const isChecked = selectedTpIds.includes(tp.id);
                           return (
-                            <label key={tp.id} className="flex items-start gap-2 text-xs text-slate-300 cursor-pointer select-none">
+                            <label key={tp.id} className="flex items-start gap-2 text-xs text-slate-350 cursor-pointer select-none">
                               <input
                                 type="checkbox"
                                 checked={isChecked}

@@ -713,13 +713,22 @@ export default function InputNilaiPage() {
                       {importingBuku ? 'Memuat...' : 'Muat TP dari Buku Paket'}
                     </button>
                     {tpList.length > 0 && (
-                      <a
-                        href={`/guru/cetak-prota?kelasId=${currentSesi.kelasId}&mapelId=${currentSesi.mapelId}`}
-                        target="_blank"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all shadow-md"
-                      >
-                        <Printer size={13} /> Cetak Lembar Prota
-                      </a>
+                      <>
+                        <a
+                          href={`/guru/cetak-atp?kelasId=${currentSesi.kelasId}&mapelId=${currentSesi.mapelId}`}
+                          target="_blank"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-650 hover:bg-indigo-600 text-white border border-indigo-650 rounded-xl text-xs font-semibold transition-all shadow-md"
+                        >
+                          <Printer size={13} /> Cetak ATP
+                        </a>
+                        <a
+                          href={`/guru/cetak-prota?kelasId=${currentSesi.kelasId}&mapelId=${currentSesi.mapelId}`}
+                          target="_blank"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all shadow-md"
+                        >
+                          <Printer size={13} /> Cetak Lembar Prota
+                        </a>
+                      </>
                     )}
                   </div>
                 </div>

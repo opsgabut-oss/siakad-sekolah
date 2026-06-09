@@ -3,6 +3,56 @@ import { prisma } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { BUKU_PAKET_DATABASE } from '@/lib/bukuPaket';
 
+// Helper to enhance chapter activities into 2 meetings with explicit minutes
+function enhanceChapterActivities(chapter: any) {
+  const parseClean = (text: string) => {
+    return text.replace(/Pertemuan \d+:\s*/gi, '').trim();
+  };
+
+  const cleanPendahuluan = parseClean(chapter.kegiatanPendahuluan);
+  const cleanInti = parseClean(chapter.kegiatanInti);
+  const cleanPenutup = parseClean(chapter.kegiatanPenutup);
+
+  const p1Pend = `* Pertemuan 1 (10 Menit):
+1. Guru membuka pembelajaran dengan salam pembuka, menyapa siswa, dan berdoa bersama.
+2. Apersepsi: Guru mengaitkan pembelajaran hari ini dengan pengetahuan awal siswa: ${cleanPendahuluan}.
+3. Motivasi: Guru menyampaikan tujuan pembelajaran dan pentingnya materi ini untuk kehidupan sehari-hari.`;
+
+  const p2Pend = `* Pertemuan 2 (10 Menit):
+1. Guru menyapa siswa dengan hangat, menanyakan kesiapan belajar, dan berdoa.
+2. Apersepsi: Guru mengulas singkat materi yang dipelajari pada Pertemuan 1.
+3. Pemberian Acuan: Guru menyampaikan kelanjutan kegiatan yang akan dilaksanakan hari ini.`;
+
+  const p1Inti = `* Pertemuan 1 (50 Menit):
+1. Orientasi Masalah: Guru memantik pemahaman siswa dengan media/pertanyaan terkait topik.
+2. Diskusi & Investigasi: Guru membagi siswa ke dalam kelompok heterogen (4-5 orang).
+3. Aktivitas Pembelajaran: Siswa secara berkelompok melakukan aktivitas utama: ${cleanInti}.
+4. Bimbingan Guru: Guru berkeliling membimbing kelompok yang memerlukan arahan.`;
+
+  const p2Inti = `* Pertemuan 2 (50 Menit):
+1. Pengolahan Data: Siswa kembali ke kelompoknya untuk mendiskusikan hasil temuan sebelumnya dan merampungkan Lembar Kerja Peserta Didik (LKPD).
+2. Menyajikan Hasil Karya: Perwakilan kelompok mempresentasikan hasil diskusi kelompok di depan kelas.
+3. Evaluasi & Penguatan: Guru memberikan apresiasi, ulasan, serta penguatan atas hasil presentasi kelompok.`;
+
+  const p1Penut = `* Pertemuan 1 (10 Menit):
+1. Simpulan: Siswa dipandu oleh guru untuk menyimpulkan pembelajaran hari ini.
+2. Refleksi: ${cleanPenutup}
+3. Tindak Lanjut: Siswa diberikan tugas mandiri/bacaan singkat untuk pertemuan berikutnya.`;
+
+  const p2Penut = `* Pertemuan 2 (10 Menit):
+1. Simpulan Akhir: Siswa bersama guru menyimpulkan keseluruhan kompetensi yang telah dipelajari dari Pertemuan 1 & 2.
+2. Asesmen Penutup: Guru memberikan tes evaluasi tertulis mandiri singkat.
+3. Tindak Lanjut & Doa: Guru menutup pembelajaran dengan doa bersama dan salam penutup.`;
+
+  return {
+    ...chapter,
+    alokasiWaktu: "4 JP (4 x 35 Menit) - 2 Pertemuan (2 Hari)",
+    kegiatanPendahuluan: `${p1Pend}\n\n${p2Pend}`,
+    kegiatanInti: `${p1Inti}\n\n${p2Inti}`,
+    kegiatanPenutup: `${p1Penut}\n\n${p2Penut}`,
+  };
+}
+
 function generateOfflineTemplate(mapelNama: string, kelasNama: string, tpDeskripsi: string, topik: string) {
   const finalTopic = tpDeskripsi || topik || 'Materi Pembelajaran';
   const cleanTopic = finalTopic.replace(/^\d+\.\s*/, ''); // hilangkan nomor jika ada
@@ -10,7 +60,7 @@ function generateOfflineTemplate(mapelNama: string, kelasNama: string, tpDeskrip
   return {
     judul: `Modul Ajar ${mapelNama || 'Mata Pelajaran'} - ${cleanTopic} - Kelas ${kelasNama || 'SD'}`,
     semester: "Ganjil",
-    alokasiWaktu: "2 JP (2 x 35 Menit)",
+    alokasiWaktu: "4 JP (4 x 35 Menit) - 2 Pertemuan (2 Hari)",
     kompetensiAwal: `Siswa telah memahami konsep dasar awal yang berkaitan dengan ${cleanTopic.toLowerCase()}.`,
     profilLulusan: [
       "Penalaran Kritis",
@@ -23,9 +73,38 @@ function generateOfflineTemplate(mapelNama: string, kelasNama: string, tpDeskrip
     tujuanPembelajaranText: `1. Peserta didik dapat memahami konsep ${cleanTopic.toLowerCase()} dengan benar.\n2. Peserta didik dapat mengidentifikasi dan memecahkan masalah sehari-hari yang berkaitan dengan ${cleanTopic.toLowerCase()}.`,
     pemahamanBermakna: `Peserta didik dapat menyadari manfaat penting dari mempelajari ${cleanTopic.toLowerCase()} dalam aktivitas sehari-hari.`,
     pertanyaanPemantik: `1. Apa yang terlintas di pikiran kalian ketika mendengar kata ${cleanTopic.toLowerCase()}?\n2. Mengapa kita perlu mempelajari ${cleanTopic.toLowerCase()}?`,
-    kegiatanPendahuluan: `1. Orientasi: Guru membuka pelajaran dengan salam pembuka, menanyakan kabar siswa, dan memeriksa kehadiran siswa.\n2. Apersepsi: Guru mengaitkan materi pembelajaran sebelumnya dengan materi yang akan dipelajari hari ini tentang ${cleanTopic.toLowerCase()}.\n3. Motivasi: Guru menjelaskan manfaat nyata mempelajari ${cleanTopic.toLowerCase()} dalam kehidupan sehari-hari.\n4. Pemberian Acuan: Guru menyampaikan tujuan pembelajaran yang ingin dicapai pada hari ini.`,
-    kegiatanInti: `1. Orientasi Siswa pada Masalah: Guru menyajikan contoh kasus atau gambar menarik di papan tulis terkait dengan ${cleanTopic.toLowerCase()}.\n2. Mengorganisasikan Siswa: Guru membagi kelas menjadi beberapa kelompok kecil berisi 4-5 siswa yang heterogen dan membagikan Lembar Kerja Peserta Didik (LKPD).\n3. Membimbing Penyelidikan: Siswa melakukan diskusi kelompok secara aktif untuk menyelesaikan masalah dalam LKPD. Guru berkeliling memberikan arahan dan bantuan kepada kelompok yang kesulitan.\n4. Menyajikan Hasil Karya: Perwakilan kelompok maju ke depan kelas untuk mempresentasikan hasil diskusi kelompok mereka.\n5. Menganalisis & Mengevaluasi: Kelompok lain memberikan masukan atau pertanyaan. Guru memberikan klarifikasi, ulasan, serta penguatan atas jawaban siswa.`,
-    kegiatanPenutup: `1. Simpulan: Siswa bersama guru merangkum poin-poin inti dari materi pelajaran hari ini tentang ${cleanTopic.toLowerCase()}.\n2. Evaluasi: Guru memberikan kuis tertulis/lisan mandiri singkat untuk mengecek pemahaman masing-masing siswa.\n3. Refleksi: Guru menanyakan perasaan siswa mengenai KBM hari ini (apa yang menyenangkan dan apa yang dirasa masih sulit).\n4. Tindak Lanjut: Guru memberikan tugas bacaan singkat di rumah, ditutup dengan doa bersama dan salam penutup.`,
+    
+    kegiatanPendahuluan: `* Pertemuan 1 (10 Menit):
+1. Orientasi: Guru membuka pelajaran dengan salam pembuka, menanyakan kabar siswa, dan memeriksa kehadiran siswa.
+2. Apersepsi: Guru mengaitkan materi sebelumnya dengan konsep ${cleanTopic.toLowerCase()}.
+3. Motivasi: Guru menjelaskan tujuan pembelajaran dan manfaat mempelajari ${cleanTopic.toLowerCase()} dalam kehidupan sehari-hari.
+
+* Pertemuan 2 (10 Menit):
+1. Orientasi: Guru menyapa siswa dan memimpin doa bersama sebelum memulai pembelajaran.
+2. Apersepsi: Guru mengulas kembali konsep dasar ${cleanTopic.toLowerCase()} yang sudah dipelajari di pertemuan pertama.
+3. Pemberian Acuan: Guru menyampaikan rencana kegiatan inti lanjutan untuk pertemuan kedua.`,
+
+    kegiatanInti: `* Pertemuan 1 (50 Menit):
+1. Orientasi Siswa pada Masalah: Guru menyajikan contoh kasus atau gambar menarik di papan tulis terkait dengan ${cleanTopic.toLowerCase()}.
+2. Mengorganisasikan Siswa: Guru membagi kelas menjadi beberapa kelompok kecil berisi 4-5 siswa yang heterogen dan membagikan Lembar Kerja Peserta Didik (LKPD).
+3. Membimbing Penyelidikan: Siswa melakukan diskusi kelompok secara aktif untuk menyelesaikan masalah dalam LKPD. Guru berkeliling memberikan bimbingan.
+4. Menyajikan Hasil Karya Awal: Perwakilan kelompok mempresentasikan analisis awal mereka tentang ${cleanTopic.toLowerCase()}.
+
+* Pertemuan 2 (50 Menit):
+1. Mengembangkan Hasil Karya: Siswa kembali ke kelompok masing-masing untuk menyempurnakan solusi pemecahan masalah.
+2. Menyajikan Hasil Karya Akhir: Setiap kelompok secara bergantian mempresentasikan produk hasil pemecahan masalah atau kesimpulan akhir kelompok di depan kelas.
+3. Menganalisis & Mengevaluasi: Kelompok lain memberikan masukan atau pertanyaan. Guru memberikan klarifikasi, ulasan, serta penguatan materi ${cleanTopic.toLowerCase()}.`,
+
+    kegiatanPenutup: `* Pertemuan 1 (10 Menit):
+1. Simpulan Awal: Siswa bersama guru menyimpulkan inti pembelajaran pertemuan pertama.
+2. Refleksi: Guru menanyakan perasaan siswa mengenai proses belajar hari ini.
+3. Tindak Lanjut: Guru meminta siswa mengamati penerapan ${cleanTopic.toLowerCase()} di rumah untuk dibahas pertemuan berikutnya.
+
+* Pertemuan 2 (10 Menit):
+1. Rangkuman Akhir: Siswa bersama guru merangkum seluruh materi tentang ${cleanTopic.toLowerCase()} dari pertemuan 1 & 2.
+2. Evaluasi: Guru memberikan kuis tertulis mandiri singkat untuk mengecek pemahaman akhir siswa.
+3. Refleksi & Penutup: Guru memberikan apresiasi atas kerja kelompok siswa, doa bersama, dan salam penutup.`,
+
     asesmenDiagnostik: "Tanya jawab lisan secara klasikal untuk mengukur kemampuan awal siswa sebelum pembelajaran dimulai.",
     asesmenFormatif: "Observasi sikap profil lulusan selama pembelajaran, penilaian kinerja kelompok, serta penilaian hasil pengerjaan LKPD.",
     asesmenSumatif: "Tes tertulis mandiri di akhir materi yang terdiri dari 5 soal isian singkat atau pilihan ganda.",
@@ -95,7 +174,7 @@ export async function POST(request: Request) {
   // Jika API Key kosong, gunakan Offline Generator (menggunakan chapter yang dipilih atau fallback umum)
   if (!apiKey) {
     if (selectedChapter) {
-      return NextResponse.json(selectedChapter);
+      return NextResponse.json(enhanceChapterActivities(selectedChapter));
     }
     const offlineResult = generateOfflineTemplate(mapelNama, kelasNama, tpDeskripsi, topik);
     return NextResponse.json(offlineResult);
@@ -125,7 +204,7 @@ export async function POST(request: Request) {
 {
   "judul": "Judul modul ajar yang menarik dan sesuai dengan materi (contoh: Modul Ajar Matematika - Pembagian Pecahan Kelas V)",
   "semester": "Ganjil atau Genap (sesuaikan dengan materi pembelajaran yang paling masuk akal)",
-  "alokasiWaktu": "2 JP (2 x 35 Menit) atau sejenisnya",
+  "alokasiWaktu": "4 JP (4 x 35 Menit) - Dibagi menjadi 2 Pertemuan (2 hari)",
   "kompetensiAwal": "Kompetensi prasyarat yang harus dimiliki siswa sebelum mempelajari materi ini",
   "profilLulusan": [
     "Pilih 2-3 dimensi yang paling relevan dari 8 dimensi Profil Lulusan Permendikdasmen No. 10/2025: 'Keimanan dan Ketakwaan (terhadap Tuhan YME & Berakhlak Mulia)', 'Kewargaan', 'Penalaran Kritis', 'Kreativitas', 'Kolaborasi', 'Kemandirian', 'Kesehatan', 'Komunikasi'"
@@ -136,9 +215,9 @@ export async function POST(request: Request) {
   "tujuanPembelajaranText": "Penjabaran detail tujuan pembelajaran operasional",
   "pemahamanBermakna": "Manfaat praktis materi ini dalam kehidupan sehari-hari siswa",
   "pertanyaanPemantik": "2-3 pertanyaan pemantik pembelajaran (pisahkan dengan baris baru '\\n')",
-  "kegiatanPendahuluan": "Langkah detail kegiatan pendahuluan (misal: salam, absensi, apersepsi, motivasi, penyampaian tujuan)",
-  "kegiatanInti": "Langkah detail kegiatan inti sesuai model pembelajaran yang dipilih (langkah berkelompok, diskusi, presentasi, pengerjaan LKPD)",
-  "kegiatanPenutup": "Langkah detail kegiatan penutup (refleksi, simpulan bersama, asesmen singkat, salam penutup)",
+  "kegiatanPendahuluan": "Wajib dibagi menjadi Pertemuan 1 (10 Menit) dan Pertemuan 2 (10 Menit) secara eksplisit. Contoh:\\n* Pertemuan 1 (10 Menit):\\n  1. Guru membuka pembelajaran dengan salam dan doa.\\n  2. Apersepsi...\\n* Pertemuan 2 (10 Menit):\\n  1. Guru menyapa siswa...\\n  2. Apersepsi materi sebelumnya...",
+  "kegiatanInti": "Wajib dibagi menjadi Pertemuan 1 (50 Menit) dan Pertemuan 2 (50 Menit) secara eksplisit. Contoh:\\n* Pertemuan 1 (50 Menit):\\n  1. Orientasi...\\n  2. Diskusi...\\n* Pertemuan 2 (50 Menit):\\n  1. Melanjutkan proyek...\\n  2. Presentasi...",
+  "kegiatanPenutup": "Wajib dibagi menjadi Pertemuan 1 (10 Menit) dan Pertemuan 2 (10 Menit) secara eksplisit. Contoh:\\n* Pertemuan 1 (10 Menit):\\n  1. Refleksi...\\n  2. Tugas mandiri...\\n* Pertemuan 2 (10 Menit):\\n  1. Kesimpulan...\\n  2. Penutup dan doa...",
   "asesmenDiagnostik": "Metode penilaian awal (contoh: kuis singkat, tanya jawab lisan)",
   "asesmenFormatif": "Metode penilaian proses (contoh: rubrik observasi keaktifan kelompok, pengerjaan LKPD)",
   "asesmenSumatif": "Metode penilaian hasil akhir (contoh: tes tertulis 5 soal pilihan ganda/isian)",
@@ -148,6 +227,7 @@ export async function POST(request: Request) {
 }
 
 Catatan penting:
+- Bagi seluruh kegiatan pembelajaran menjadi Pertemuan 1 dan Pertemuan 2 secara eksplisit untuk menggambarkan pembagian 2 hari belajar agar siswa tidak jenuh, serta cantumkan alokasi waktu menit di setiap pertemuan (Pendahuluan: 10 Menit, Inti: 50 Menit, Penutup: 10 Menit).
 - Setiap konten deskripsi kegiatan (pendahuluan, inti, penutup) harus ditulis secara lengkap, panjang, dan rinci, tidak boleh disingkat.
 - Gunakan bahasa Indonesia yang baik, benar, formal, dan santun.
 - Jangan menyertakan tanda petik tiga (\`\`\`json) di awal maupun akhir output. Berikan JSON valid mentah.`;
@@ -180,7 +260,7 @@ Catatan penting:
     if (!response.ok) {
       // Jika API error, fallback otomatis ke template offline yang rapi
       console.warn('Gemini API returned error. Falling back to offline generator.');
-      if (selectedChapter) return NextResponse.json(selectedChapter);
+      if (selectedChapter) return NextResponse.json(enhanceChapterActivities(selectedChapter));
       const offlineResult = generateOfflineTemplate(mapelNama, kelasNama, tpDeskripsi, topik);
       return NextResponse.json(offlineResult);
     }
@@ -198,7 +278,7 @@ Catatan penting:
   } catch (error) {
     // Tangkap semua error (timeout, salah kunci, dll) dan alihkan ke generator offline agar pengguna tidak terganggu
     console.error('Gemini API failed or timed out. Falling back to offline generator.', error);
-    if (selectedChapter) return NextResponse.json(selectedChapter);
+    if (selectedChapter) return NextResponse.json(enhanceChapterActivities(selectedChapter));
     const offlineResult = generateOfflineTemplate(mapelNama, kelasNama, tpDeskripsi, topik);
     return NextResponse.json(offlineResult);
   }

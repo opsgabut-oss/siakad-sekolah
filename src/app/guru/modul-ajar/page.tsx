@@ -251,12 +251,6 @@ export default function GuruModulAjarPage() {
   };
 
   const handleGenerateAi = async () => {
-    const key = geminiKey || localStorage.getItem('gemini_api_key') || '';
-    if (!key) {
-      alert('Silakan masukkan API Key Gemini Anda terlebih dahulu di bagian panel AI.');
-      setShowAiConfig(true);
-      return;
-    }
     if (!selectedTpIdForAi && !additionalTopicForAi.trim()) {
       alert('Silakan pilih salah satu Tujuan Pembelajaran (TP) atau ketik topik tambahan.');
       return;
@@ -265,6 +259,7 @@ export default function GuruModulAjarPage() {
     setGeneratingAi(true);
     setError('');
     try {
+      const key = geminiKey || localStorage.getItem('gemini_api_key') || '';
       const res = await fetch('/api/guru/modul-ajar/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

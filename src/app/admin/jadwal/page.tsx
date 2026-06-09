@@ -35,6 +35,50 @@ interface Jadwal {
 
 const HARI_LIST = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'];
 
+const calculateJP = (mulai: string, selesai: string): number => {
+  if (!mulai || !selesai) return 0;
+  const [h1, m1] = mulai.split(':').map(Number);
+  const [h2, m2] = selesai.split(':').map(Number);
+  if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return 0;
+  const minutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+  if (minutes <= 0) return 0;
+  
+  // Standard in SD: 1 JP = 35 minutes
+  return Math.max(1, Math.round(minutes / 35));
+};
+
+const getTargetJPMingguan = (kelasNama: string, mapelKode: string, scheduledJP: number = 0): number => {
+  const code = mapelKode.toUpperCase();
+  const match = kelasNama.match(/\d+/);
+  const grade = match ? parseInt(match[0], 10) : 4;
+
+  if (code === 'MTK') {
+    return grade === 1 ? 4 : 5;
+  }
+  if (code === 'IND') {
+    return (grade === 1 || grade === 2) ? 7 : 6;
+  }
+  if (code === 'PP') {
+    return 4;
+  }
+  if (code === 'IPAS') {
+    return grade >= 3 ? 5 : 0;
+  }
+  if (code === 'PAI' || code === 'PJOK' || code === 'SRI') {
+    return 3;
+  }
+  if (code === 'ING') {
+    if (grade < 3) {
+      return scheduledJP > 0 ? 2 : 0;
+    }
+    return 2;
+  }
+  if (code === 'JAWA') {
+    return 2;
+  }
+  return 0;
+};
+
 export default function JadwalPelajaranPage() {
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [mapelList, setMapelList] = useState<Mapel[]>([]);
@@ -215,6 +259,22 @@ export default function JadwalPelajaranPage() {
     return acc;
   }, {} as Record<string, Jadwal[]>);
 
+  const activeKelas = kelasList.find((k) => k.id === selectedKelasId);
+  const activeKelasNama = activeKelas ? activeKelas.nama : '';
+
+  const mapelJpStatus = mapelList.map((m) => {
+    const scheduled = jadwalList
+      .filter((j) => j.mataPelajaranId === m.id)
+      .reduce((sum, j) => sum + calculateJP(j.jamMulai, j.jamSelesai), 0);
+    const target = activeKelasNama ? getTargetJPMingguan(activeKelasNama, m.kode, scheduled) : 0;
+    return {
+      ...m,
+      target,
+      scheduled,
+      remaining: target - scheduled,
+    };
+  });
+
   if (loadingConfig) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -283,6 +343,64 @@ export default function JadwalPelajaranPage() {
           </button>
         )}
       </div>
+
+      {/* Analisis Alokasi JP Mingguan */}
+      {selectedKelasId && activeKelasNama && (
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 space-y-4">
+          <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
+            <h2 className="text-md font-bold text-white flex items-center gap-2">
+              <BookOpen className="text-indigo-400" size={18} />
+              Analisis Beban Belajar & Alokasi JP ({activeKelasNama})
+            </h2>
+            <span className="text-xs text-slate-400">Target Kurikulum Merdeka</span>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {mapelJpStatus
+              .filter((m) => m.target > 0)
+              .map((m) => {
+                const percent = Math.min(100, Math.max(0, (m.scheduled / m.target) * 100));
+                let statusColor = "bg-indigo-500";
+                let badgeColor = "bg-indigo-500/10 text-indigo-400 border-indigo-500/20";
+                let statusText = `${m.remaining} JP Sisa`;
+
+                if (m.remaining === 0) {
+                  statusColor = "bg-emerald-500";
+                  badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                  statusText = "Selesai";
+                } else if (m.remaining < 0) {
+                  statusColor = "bg-rose-500";
+                  badgeColor = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+                  statusText = `Berlebih ${Math.abs(m.remaining)} JP`;
+                }
+
+                return (
+                  <div key={m.id} className="bg-slate-950/40 border border-slate-850 hover:border-slate-800 rounded-xl p-3.5 space-y-2.5 transition-all">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{m.kode}</h4>
+                        <h3 className="text-sm font-bold text-slate-200 line-clamp-1">{m.nama}</h3>
+                      </div>
+                      <span className={`text-2xs px-2 py-0.5 rounded-full border font-semibold ${badgeColor}`}>
+                        {statusText}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-2xs font-semibold text-slate-500">
+                        <span>Terjadwal: {m.scheduled} JP</span>
+                        <span>Target: {m.target} JP</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div className={`h-full transition-all duration-300 ${statusColor}`} style={{ width: `${percent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
       {/* Grid Mingguan */}
       {loading ? (
@@ -420,6 +538,18 @@ export default function JadwalPelajaranPage() {
                     ))}
                   </select>
                 )}
+                {formData.mataPelajaranId && (() => {
+                  const selectedMapel = mapelJpStatus.find((m) => m.id === formData.mataPelajaranId);
+                  if (!selectedMapel || selectedMapel.target === 0) return null;
+                  
+                  if (selectedMapel.remaining === 0) {
+                    return <p className="text-xs text-emerald-400 mt-1.5 font-semibold">✓ Alokasi JP untuk mata pelajaran ini sudah terpenuhi.</p>;
+                  } else if (selectedMapel.remaining < 0) {
+                    return <p className="text-xs text-rose-400 mt-1.5 font-semibold">⚠ Perhatian: Alokasi JP melebihi target mingguan (Berlebih {Math.abs(selectedMapel.remaining)} JP).</p>;
+                  } else {
+                    return <p className="text-xs text-indigo-400 mt-1.5 font-semibold">ℹ Masih tersisa {selectedMapel.remaining} JP yang perlu dijadwalkan minggu ini.</p>;
+                  }
+                })()}
               </div>
 
               {/* Guru Pengampu */}

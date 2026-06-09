@@ -26,9 +26,9 @@ export async function GET(request: Request) {
       ]
     });
 
-    // Ambil semua TP untuk mapel tersebut
+    // Ambil semua TP untuk mapel dan kelas tersebut
     const tps = await prisma.tujuanPembelajaran.findMany({
-      where: { mataPelajaranId },
+      where: { mataPelajaranId, kelasId },
       orderBy: [
         { semester: 'asc' },
         { createdAt: 'asc' }

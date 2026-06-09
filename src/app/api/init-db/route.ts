@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { Hari, Role } from '@prisma/client';
+import { Hari } from '@prisma/client';
 
 export async function GET(request: Request) {
   const user = await getAuthenticatedUser();
@@ -24,42 +24,46 @@ export async function GET(request: Request) {
       });
     }
 
-    // 2. Dapatkan atau buat Kelas 4 dan Kelas 5
-    let kelas4 = await prisma.kelas.findFirst({
-      where: { nama: 'Kelas 4', tahunAjaranId: tahunAjaran.id }
-    });
-    if (!kelas4) {
-      kelas4 = await prisma.kelas.create({
-        data: { nama: 'Kelas 4', tahunAjaranId: tahunAjaran.id }
+    // 2. Dapatkan atau buat Kelas 1 sampai Kelas 6
+    const kelasNames = ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6'];
+    const kelasMap: Record<string, any> = {};
+
+    for (const name of kelasNames) {
+      let kl = await prisma.kelas.findFirst({
+        where: { nama: name, tahunAjaranId: tahunAjaran.id }
       });
+      if (!kl) {
+        kl = await prisma.kelas.create({
+          data: { nama: name, tahunAjaranId: tahunAjaran.id }
+        });
+      }
+      kelasMap[name] = kl;
     }
 
-    let kelas5 = await prisma.kelas.findFirst({
-      where: { nama: 'Kelas 5', tahunAjaranId: tahunAjaran.id }
-    });
-    if (!kelas5) {
-      kelas5 = await prisma.kelas.create({
-        data: { nama: 'Kelas 5', tahunAjaranId: tahunAjaran.id }
-      });
-    }
+    // 3. Dapatkan atau buat 9 Mata Pelajaran
+    const mapelData = [
+      { kode: 'MTK', nama: 'Matematika' },
+      { kode: 'IPAS', nama: 'Ilmu Pengetahuan Alam dan Sosial' },
+      { kode: 'IND', nama: 'Bahasa Indonesia' },
+      { kode: 'PP', nama: 'Pendidikan Pancasila' },
+      { kode: 'PAI', nama: 'Pendidikan Agama Islam' },
+      { kode: 'PJOK', nama: 'Pendidikan Jasmani, Olahraga, dan Kesehatan' },
+      { kode: 'SRI', nama: 'Seni Rupa' },
+      { kode: 'ING', nama: 'Bahasa Inggris' },
+      { kode: 'JAWA', nama: 'Bahasa Jawa' }
+    ];
 
-    // 3. Dapatkan atau buat Mata Pelajaran MTK & IPAS
-    let mapelMTK = await prisma.mataPelajaran.findUnique({
-      where: { kode: 'MTK' }
-    });
-    if (!mapelMTK) {
-      mapelMTK = await prisma.mataPelajaran.create({
-        data: { nama: 'Matematika', kode: 'MTK' }
+    const mapelMap: Record<string, any> = {};
+    for (const m of mapelData) {
+      let mapel = await prisma.mataPelajaran.findUnique({
+        where: { kode: m.kode }
       });
-    }
-
-    let mapelIPAS = await prisma.mataPelajaran.findUnique({
-      where: { kode: 'IPAS' }
-    });
-    if (!mapelIPAS) {
-      mapelIPAS = await prisma.mataPelajaran.create({
-        data: { nama: 'Ilmu Pengetahuan Alam dan Sosial', kode: 'IPAS' }
-      });
+      if (!mapel) {
+        mapel = await prisma.mataPelajaran.create({
+          data: { nama: m.nama, kode: m.kode }
+        });
+      }
+      mapelMap[m.kode] = mapel;
     }
 
     // 4. Cari atau hubungkan Guru Profile ke User
@@ -68,7 +72,6 @@ export async function GET(request: Request) {
     });
 
     if (!guru) {
-      // Jika NIP di user ada, gunakan itu. Jika tidak, pakai NIP default/username
       const isNip = user.username.match(/^\d+$/);
       guru = await prisma.guru.create({
         data: {
@@ -80,96 +83,202 @@ export async function GET(request: Request) {
       });
     }
 
-    // 5. Buat Jadwal Mengajar untuk Guru tersebut jika belum ada
-    const existingJadwals = await prisma.jadwalPelajaran.findMany({
+    // 5. Bersihkan jadwal lama guru ini untuk inisialisasi ulang yang bersih
+    await prisma.jadwalPelajaran.deleteMany({
       where: { guruId: guru.id }
     });
 
     const createdJadwals = [];
 
-    if (existingJadwals.length === 0) {
-      // Jadwal Kelas 4 - MTK
-      const j1 = await prisma.jadwalPelajaran.create({
+    // Mengisi jadwal untuk semua kelas (1 s.d. 6) sesuai struktur Kurikulum Merdeka
+    for (const kName of kelasNames) {
+      const kl = kelasMap[kName];
+      const isLowGrade = kName === 'Kelas 1' || kName === 'Kelas 2'; // Kelas 1 & 2 tidak ada IPAS
+
+      // Matematika (MTK) - Kelas 1: 4 JP, Kelas 2-6: 5 JP
+      const mtkJP = kName === 'Kelas 1' ? '07:30-09:50' : '07:30-10:25'; // 4 JP vs 5 JP
+      const mtkSelesai = kName === 'Kelas 1' ? '09:50' : '10:25';
+      await prisma.jadwalPelajaran.create({
         data: {
-          kelasId: kelas4.id,
-          mataPelajaranId: mapelMTK.id,
+          kelasId: kl.id,
+          mataPelajaranId: mapelMap['MTK'].id,
           guruId: guru.id,
           hari: Hari.SENIN,
           jamMulai: '07:30',
-          jamSelesai: '09:00'
+          jamSelesai: mtkSelesai
         }
       });
-      createdJadwals.push(`Kelas 4 - Matematika`);
+      createdJadwals.push(`${kName} - Matematika (${kName === 'Kelas 1' ? '4' : '5'} JP)`);
 
-      // Jadwal Kelas 4 - IPAS
-      const j2 = await prisma.jadwalPelajaran.create({
-        data: {
-          kelasId: kelas4.id,
-          mataPelajaranId: mapelIPAS.id,
-          guruId: guru.id,
-          hari: Hari.SELASA,
-          jamMulai: '07:30',
-          jamSelesai: '09:00'
-        }
-      });
-      createdJadwals.push(`Kelas 4 - IPAS`);
+      // IPAS (Hanya Kelas 3 s.d. 6) - 5 JP
+      if (!isLowGrade) {
+        await prisma.jadwalPelajaran.create({
+          data: {
+            kelasId: kl.id,
+            mataPelajaranId: mapelMap['IPAS'].id,
+            guruId: guru.id,
+            hari: Hari.SELASA,
+            jamMulai: '07:30',
+            jamSelesai: '10:25'
+          }
+        });
+        createdJadwals.push(`${kName} - IPAS (5 JP)`);
+      }
 
-      // Jadwal Kelas 5 - MTK
-      const j3 = await prisma.jadwalPelajaran.create({
-        data: {
-          kelasId: kelas5.id,
-          mataPelajaranId: mapelMTK.id,
-          guruId: guru.id,
-          hari: Hari.RABU,
-          jamMulai: '07:30',
-          jamSelesai: '09:00'
-        }
-      });
-      createdJadwals.push(`Kelas 5 - Matematika`);
+      // Bahasa Indonesia (IND) - Kelas 1 & 2: 7 JP, Kelas 3-6: 6 JP
+      // Untuk Kelas 1-2 dipecah jadi 2 pertemuan: Selasa 2 JP (07:30-08:40), Rabu 5 JP (07:30-10:25)
+      if (isLowGrade) {
+        await prisma.jadwalPelajaran.create({
+          data: {
+            kelasId: kl.id,
+            mataPelajaranId: mapelMap['IND'].id,
+            guruId: guru.id,
+            hari: Hari.SELASA,
+            jamMulai: '07:30',
+            jamSelesai: '08:40'
+          }
+        });
+        await prisma.jadwalPelajaran.create({
+          data: {
+            kelasId: kl.id,
+            mataPelajaranId: mapelMap['IND'].id,
+            guruId: guru.id,
+            hari: Hari.RABU,
+            jamMulai: '07:30',
+            jamSelesai: '10:25'
+          }
+        });
+        createdJadwals.push(`${kName} - Bahasa Indonesia (7 JP - 2 Pertemuan)`);
+      } else {
+        await prisma.jadwalPelajaran.create({
+          data: {
+            kelasId: kl.id,
+            mataPelajaranId: mapelMap['IND'].id,
+            guruId: guru.id,
+            hari: Hari.RABU,
+            jamMulai: '07:30',
+            jamSelesai: '11:00' // 6 JP
+          }
+        });
+        createdJadwals.push(`${kName} - Bahasa Indonesia (6 JP)`);
+      }
 
-      // Jadwal Kelas 5 - IPAS
-      const j4 = await prisma.jadwalPelajaran.create({
+      // Pendidikan Pancasila (PP) - 4 JP
+      await prisma.jadwalPelajaran.create({
         data: {
-          kelasId: kelas5.id,
-          mataPelajaranId: mapelIPAS.id,
+          kelasId: kl.id,
+          mataPelajaranId: mapelMap['PP'].id,
           guruId: guru.id,
           hari: Hari.KAMIS,
           jamMulai: '07:30',
-          jamSelesai: '09:00'
+          jamSelesai: '09:50'
         }
       });
-      createdJadwals.push(`Kelas 5 - IPAS`);
+      createdJadwals.push(`${kName} - Pendidikan Pancasila (4 JP)`);
+
+      // Pendidikan Agama Islam (PAI) - 3 JP
+      await prisma.jadwalPelajaran.create({
+        data: {
+          kelasId: kl.id,
+          mataPelajaranId: mapelMap['PAI'].id,
+          guruId: guru.id,
+          hari: Hari.JUMAT,
+          jamMulai: '07:30',
+          jamSelesai: '09:15'
+        }
+      });
+      createdJadwals.push(`${kName} - Pendidikan Agama Islam (3 JP)`);
+
+      // PJOK - 3 JP
+      await prisma.jadwalPelajaran.create({
+        data: {
+          kelasId: kl.id,
+          mataPelajaranId: mapelMap['PJOK'].id,
+          guruId: guru.id,
+          hari: Hari.JUMAT,
+          jamMulai: '09:15',
+          jamSelesai: '11:00'
+        }
+      });
+      createdJadwals.push(`${kName} - PJOK (3 JP)`);
+
+      // Seni Rupa (SRI) - 3 JP
+      await prisma.jadwalPelajaran.create({
+        data: {
+          kelasId: kl.id,
+          mataPelajaranId: mapelMap['SRI'].id,
+          guruId: guru.id,
+          hari: Hari.SABTU,
+          jamMulai: '07:30',
+          jamSelesai: '09:15'
+        }
+      });
+      createdJadwals.push(`${kName} - Seni Rupa (3 JP)`);
+
+      // Bahasa Inggris (ING) (Hanya Kelas 3 s.d. 6) - 2 JP
+      if (!isLowGrade) {
+        await prisma.jadwalPelajaran.create({
+          data: {
+            kelasId: kl.id,
+            mataPelajaranId: mapelMap['ING'].id,
+            guruId: guru.id,
+            hari: Hari.SABTU,
+            jamMulai: '09:15',
+            jamSelesai: '10:25'
+          }
+        });
+        createdJadwals.push(`${kName} - Bahasa Inggris (2 JP)`);
+      }
+
+      // Bahasa Jawa (JAWA) - 2 JP
+      // Untuk Kelas 1-2, Bahasa Jawa dimajukan ke jam 09:15 karena tidak ada Bahasa Inggris
+      const jawaMulai = isLowGrade ? '09:15' : '10:25';
+      const jawaSelesai = isLowGrade ? '10:25' : '11:35';
+      await prisma.jadwalPelajaran.create({
+        data: {
+          kelasId: kl.id,
+          mataPelajaranId: mapelMap['JAWA'].id,
+          guruId: guru.id,
+          hari: Hari.SABTU,
+          jamMulai: jawaMulai,
+          jamSelesai: jawaSelesai
+        }
+      });
+      createdJadwals.push(`${kName} - Bahasa Jawa (2 JP)`);
     }
 
-    // 6. Pastikan ada siswa di Kelas 4 agar lembar penilaian tidak kosong
-    const siswaKelas4 = await prisma.siswa.findMany({
-      where: { kelasId: kelas4.id }
-    });
+    // 6. Buat data siswa tiruan untuk semua kelas (1 s.d. 6)
+    const mockSiswa: Record<string, string[]> = {
+      'Kelas 1': ['Alif Pratama', 'Bella Saputri', 'Candra Wijaya', 'Dina Lestari'],
+      'Kelas 2': ['Eko Prasetyo', 'Fitriani', 'Galang Ramadhan', 'Hana Nabila'],
+      'Kelas 3': ['Indra Lesmana', 'Jamilah', 'Kiki Amelia', 'Lutfi Hakim'],
+      'Kelas 4': ['Ahmad Syarif', 'Siti Rahma', 'Budi Wijaya', 'Dinda Lestari'],
+      'Kelas 5': ['Dian Permana', 'Eka Putri', 'Fajar Kurnia', 'Gita Ayu'],
+      'Kelas 6': ['Muhammad Rizky', 'Nadia Safitri', 'Oki Setiawan', 'Putri Rahayu']
+    };
 
-    if (siswaKelas4.length === 0) {
-      await prisma.siswa.createMany({
-        data: [
-          { nisn: '4001123456', nama: 'Ahmad Syarif', kelasId: kelas4.id, kontakOrangTua: '081234567890' },
-          { nisn: '4002123456', nama: 'Siti Rahma', kelasId: kelas4.id, kontakOrangTua: '081234567891' },
-          { nisn: '4003123456', nama: 'Budi Wijaya', kelasId: kelas4.id, kontakOrangTua: '081234567892' },
-          { nisn: '4004123456', nama: 'Dinda Lestari', kelasId: kelas4.id, kontakOrangTua: '081234567893' }
-        ]
+    let totalSiswaCreated = 0;
+    for (const [kName, siswaNames] of Object.entries(mockSiswa)) {
+      const kl = kelasMap[kName];
+      // Hapus siswa lama di kelas ini agar tidak menumpuk/duplikat
+      await prisma.siswa.deleteMany({
+        where: { kelasId: kl.id }
       });
-    }
 
-    // 7. Pastikan ada siswa di Kelas 5
-    const siswaKelas5 = await prisma.siswa.findMany({
-      where: { kelasId: kelas5.id }
-    });
-
-    if (siswaKelas5.length === 0) {
-      await prisma.siswa.createMany({
-        data: [
-          { nisn: '5001123456', nama: 'Dian Permana', kelasId: kelas5.id, kontakOrangTua: '081234567894' },
-          { nisn: '5002123456', nama: 'Eka Putri', kelasId: kelas5.id, kontakOrangTua: '081234567895' },
-          { nisn: '5003123456', nama: 'Fajar Kurnia', kelasId: kelas5.id, kontakOrangTua: '081234567896' }
-        ]
+      const dataSiswa = siswaNames.map((name, idx) => {
+        const classDigit = kName.replace('Kelas ', '');
+        return {
+          nisn: `${classDigit}00${idx + 1}123456`,
+          nama: name,
+          kelasId: kl.id,
+          kontakOrangTua: `08123456789${idx}`
+        };
       });
+
+      await prisma.siswa.createMany({
+        data: dataSiswa
+      });
+      totalSiswaCreated += dataSiswa.length;
     }
 
     return NextResponse.json({
@@ -178,9 +287,10 @@ export async function GET(request: Request) {
       detail: {
         tahunAjaran: tahunAjaran.tahun,
         guru: guru.nama,
-        jadwalDibuat: createdJadwals.length > 0 ? createdJadwals : 'Sudah ada jadwal sebelumnya',
-        totalSiswaKelas4: (await prisma.siswa.count({ where: { kelasId: kelas4.id } })),
-        totalSiswaKelas5: (await prisma.siswa.count({ where: { kelasId: kelas5.id } }))
+        totalKelas: kelasNames.length,
+        totalMapel: mapelData.length,
+        totalJadwalDibuat: createdJadwals.length,
+        totalSiswaDibuat: totalSiswaCreated
       }
     });
 

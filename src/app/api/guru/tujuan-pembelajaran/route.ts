@@ -11,13 +11,19 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const mataPelajaranId = searchParams.get('mataPelajaranId');
+    const kelasId = searchParams.get('kelasId');
 
     if (!mataPelajaranId) {
       return NextResponse.json({ message: 'mataPelajaranId wajib disertakan' }, { status: 400 });
     }
 
+    const whereClause: any = { mataPelajaranId };
+    if (kelasId) {
+      whereClause.kelasId = kelasId;
+    }
+
     const tps = await prisma.tujuanPembelajaran.findMany({
-      where: { mataPelajaranId },
+      where: whereClause,
       orderBy: [
         { semester: 'asc' },
         { createdAt: 'asc' }
@@ -39,7 +45,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, mataPelajaranId, deskripsi, kktp, alokasiJP, semester } = body;
+    const { id, mataPelajaranId, kelasId, deskripsi, kktp, alokasiJP, semester } = body;
 
     if (!mataPelajaranId || !deskripsi) {
       return NextResponse.json({ message: 'Data tidak lengkap' }, { status: 400 });
@@ -58,6 +64,7 @@ export async function POST(request: Request) {
           kktp: kktpValue,
           alokasiJP: jp,
           semester: sem,
+          kelasId: kelasId || undefined,
         }
       });
       return NextResponse.json({ message: 'Tujuan pembelajaran berhasil diubah', data: updated });
@@ -66,6 +73,7 @@ export async function POST(request: Request) {
       const created = await prisma.tujuanPembelajaran.create({
         data: {
           mataPelajaranId,
+          kelasId,
           deskripsi,
           kktp: kktpValue,
           alokasiJP: jp,

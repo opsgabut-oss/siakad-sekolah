@@ -36,9 +36,9 @@ export default async function CetakProtaPage({ searchParams }: PageProps) {
     return notFound();
   }
 
-  // Ambil list TP untuk mapel tersebut
+  // Ambil list TP untuk mapel dan kelas tersebut
   const tps = await prisma.tujuanPembelajaran.findMany({
-    where: { mataPelajaranId: mapelId },
+    where: { mataPelajaranId: mapelId, kelasId },
     orderBy: [
       { semester: 'asc' },
       { createdAt: 'asc' }

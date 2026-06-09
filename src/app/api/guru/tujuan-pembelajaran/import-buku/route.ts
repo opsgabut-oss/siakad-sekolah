@@ -25,10 +25,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Mapel atau kelas tidak ditemukan' }, { status: 404 });
     }
 
+    // Map database codes to book codes if there are mismatches
+    const dbKode = mapel.kode.toUpperCase();
+    const bookKode = 
+      dbKode === 'PABP' ? 'PAI' : 
+      dbKode === 'SB' ? 'SRI' : 
+      dbKode === 'BJAW' ? 'JAWA' : 
+      dbKode;
+
     // Filter chapters di BUKU_PAKET_DATABASE
     const chapters = BUKU_PAKET_DATABASE.filter(
       c => c.kelas.toLowerCase() === kelas.nama.toLowerCase() && 
-           c.mapelKode.toLowerCase() === mapel.kode.toLowerCase()
+           c.mapelKode.toUpperCase() === bookKode
     );
 
     if (chapters.length === 0) {
@@ -48,10 +56,11 @@ export async function POST(request: Request) {
         const cleanDesc = line.replace(/^\d+\.\s*/, '');
         const semesterNum = chapter.semester.toLowerCase().includes('ganjil') || chapter.semester.includes('1') ? 1 : 2;
         
-        // Cek apakah TP dengan deskripsi ini sudah ada untuk mapel ini
+        // Cek apakah TP dengan deskripsi ini sudah ada untuk mapel dan kelas ini
         const existing = await prisma.tujuanPembelajaran.findFirst({
           where: {
             mataPelajaranId,
+            kelasId,
             deskripsi: cleanDesc
           }
         });
@@ -64,6 +73,7 @@ export async function POST(request: Request) {
           await prisma.tujuanPembelajaran.create({
             data: {
               mataPelajaranId,
+              kelasId,
               deskripsi: cleanDesc,
               semester: semesterNum,
               alokasiJP,

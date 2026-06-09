@@ -122,24 +122,49 @@ export default function GuruModulAjarPage() {
     setLoading(true);
     setError('');
     try {
-      const resKelas = await fetch('/api/admin/kelas');
-      const resMapel = await fetch('/api/admin/mapel');
+      const resJadwal = await fetch('/api/admin/jadwal?my=true');
       const resModul = await fetch('/api/guru/modul-ajar');
 
-      if (!resKelas.ok) throw new Error('Gagal mengambil data kelas');
-      if (!resMapel.ok) throw new Error('Gagal mengambil data mata pelajaran');
+      if (!resJadwal.ok) throw new Error('Gagal mengambil data jadwal mengajar');
       if (!resModul.ok) throw new Error('Gagal mengambil data modul ajar');
 
-      const dataKelas = await resKelas.json();
-      const dataMapel = await resMapel.json();
+      const dataJadwal = await resJadwal.json();
       const dataModul = await resModul.json();
 
-      setKelasList(dataKelas);
-      setMapelList(dataMapel);
+      // Extract unique classes and subjects from teacher's schedule
+      const uniqueKelasMap = new Map();
+      const uniqueMapelMap = new Map();
+
+      dataJadwal.forEach((j: any) => {
+        if (j.kelas && j.kelasId) {
+          uniqueKelasMap.set(j.kelasId, { id: j.kelasId, nama: j.kelas.nama });
+        }
+        if (j.mataPelajaran && j.mataPelajaranId) {
+          uniqueMapelMap.set(j.mataPelajaranId, { 
+            id: j.mataPelajaranId, 
+            nama: j.mataPelajaran.nama, 
+            kode: j.mataPelajaran.kode 
+          });
+        }
+      });
+
+      let finalKelas = Array.from(uniqueKelasMap.values());
+      let finalMapel = Array.from(uniqueMapelMap.values());
+
+      // Fallback: If teacher has no schedules assigned (e.g. admin or BK user), fetch all
+      if (finalKelas.length === 0 || finalMapel.length === 0) {
+        const resKelas = await fetch('/api/admin/kelas');
+        const resMapel = await fetch('/api/admin/mapel');
+        if (resKelas.ok) finalKelas = await resKelas.json();
+        if (resMapel.ok) finalMapel = await resMapel.json();
+      }
+
+      setKelasList(finalKelas);
+      setMapelList(finalMapel);
       setModulList(dataModul);
 
-      if (dataKelas.length > 0) setKelasId(dataKelas[0].id);
-      if (dataMapel.length > 0) setMataPelajaranId(dataMapel[0].id);
+      if (finalKelas.length > 0) setKelasId(finalKelas[0].id);
+      if (finalMapel.length > 0) setMataPelajaranId(finalMapel[0].id);
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat memuat data');
     } finally {

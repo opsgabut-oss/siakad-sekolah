@@ -81,7 +81,7 @@ export default function InputNilaiPage() {
       if (activeTab === 'nilai') {
         fetchSiswaNilai(sesi.kelasId, sesi.mapelId);
       } else if (activeTab === 'tp') {
-        fetchTps(sesi.mapelId);
+        fetchTps(sesi.kelasId, sesi.mapelId);
       } else if (activeTab === 'capaian') {
         fetchCapaian(sesi.kelasId, sesi.mapelId);
       }
@@ -154,7 +154,7 @@ export default function InputNilaiPage() {
       setGradesInput(initialInputs);
 
       // Tarik juga Tujuan Pembelajaran untuk menentukan rata-rata KKTP default jika ada
-      const resTps = await fetch(`/api/guru/tujuan-pembelajaran?mataPelajaranId=${mapelId}`);
+      const resTps = await fetch(`/api/guru/tujuan-pembelajaran?mataPelajaranId=${mapelId}&kelasId=${kelasId}`);
       if (resTps.ok) {
         const tps = await resTps.json();
         if (tps.length > 0) {
@@ -169,11 +169,11 @@ export default function InputNilaiPage() {
     }
   };
 
-  const fetchTps = async (mapelId: string) => {
+  const fetchTps = async (kelasId: string, mapelId: string) => {
     setLoadingTp(true);
     setError('');
     try {
-      const res = await fetch(`/api/guru/tujuan-pembelajaran?mataPelajaranId=${mapelId}`);
+      const res = await fetch(`/api/guru/tujuan-pembelajaran?mataPelajaranId=${mapelId}&kelasId=${kelasId}`);
       if (!res.ok) throw new Error('Gagal memuat Tujuan Pembelajaran');
       const data = await res.json();
       setTpList(data);
@@ -317,6 +317,7 @@ export default function InputNilaiPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mataPelajaranId: sesi.mapelId,
+          kelasId: sesi.kelasId,
           deskripsi: newTp.deskripsi,
           kktp: newTp.kktp,
           alokasiJP: newTp.alokasiJP,
@@ -326,7 +327,7 @@ export default function InputNilaiPage() {
       if (!res.ok) throw new Error('Gagal menyimpan Tujuan Pembelajaran');
       setSuccess('Tujuan Pembelajaran berhasil ditambahkan!');
       setNewTp({ deskripsi: '', alokasiJP: '4', semester: '1', kktp: '70' });
-      fetchTps(sesi.mapelId);
+      fetchTps(sesi.kelasId, sesi.mapelId);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.message || 'Gagal menyimpan Tujuan Pembelajaran');
@@ -348,7 +349,7 @@ export default function InputNilaiPage() {
       });
       if (!res.ok) throw new Error('Gagal menghapus Tujuan Pembelajaran');
       setSuccess('Tujuan Pembelajaran berhasil dihapus!');
-      fetchTps(sesi.mapelId);
+      fetchTps(sesi.kelasId, sesi.mapelId);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus Tujuan Pembelajaran');
@@ -378,7 +379,7 @@ export default function InputNilaiPage() {
       }
 
       setSuccess(data.message || 'Tujuan Pembelajaran berhasil dimuat!');
-      fetchTps(sesi.mapelId);
+      fetchTps(sesi.kelasId, sesi.mapelId);
       setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       setError(err.message || 'Gagal memuat TP otomatis dari Buku Paket');

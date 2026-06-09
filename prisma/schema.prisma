@@ -68,6 +68,7 @@ model Kelas {
   
   jurnalHarian  JurnalHarian[]
   modulAjar     ModulAjar[]
+  tujuanPembelajaran TujuanPembelajaran[]
 }
 
 model Guru {
@@ -274,6 +275,8 @@ model TujuanPembelajaran {
   id              String        @id @default(uuid())
   mataPelajaranId String
   mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  kelasId         String?
+  kelas           Kelas?        @relation(fields: [kelasId], references: [id], onDelete: Cascade)
   deskripsi       String        // e.g. "Membaca dan menulis bilangan cacah sampai 10.000"
   kktp            Int           @default(70) // Batas ketuntasan minimal
   alokasiJP       Int           @default(4)  // Jumlah jam pelajaran (untuk Prota)

@@ -183,7 +183,7 @@ export default function AdminProfilPage() {
                 value={pemerintah}
                 onChange={(e) => setPemerintah(e.target.value)}
                 placeholder="Contoh: Pemerintah Kabupaten Pati"
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
 
@@ -194,7 +194,7 @@ export default function AdminProfilPage() {
                 value={dinas}
                 onChange={(e) => setDinas(e.target.value)}
                 placeholder="Contoh: Dinas Pendidikan dan Kebudayaan"
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
           </div>
@@ -207,7 +207,7 @@ export default function AdminProfilPage() {
                 value={namaSekolah}
                 onChange={(e) => setNamaSekolah(e.target.value)}
                 placeholder="Contoh: SD Negeri Wedusan"
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
 
@@ -218,7 +218,7 @@ export default function AdminProfilPage() {
                 value={npsn || ''}
                 onChange={(e) => setNpsn(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="Masukkan NPSN..."
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
 
@@ -229,7 +229,7 @@ export default function AdminProfilPage() {
                 value={tahunAjaranAktif}
                 onChange={(e) => setTahunAjaranAktif(e.target.value)}
                 placeholder="Contoh: 2025/2026"
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
           </div>
@@ -242,7 +242,7 @@ export default function AdminProfilPage() {
               onChange={(e) => setAlamat(e.target.value)}
               placeholder="Masukkan jalan, desa/kelurahan, kecamatan, kabupaten, kode pos..."
               rows={2}
-              className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500 resize-none"
+              className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500 resize-none"
             />
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function AdminProfilPage() {
                 value={telepon}
                 onChange={(e) => setTelepon(e.target.value)}
                 placeholder="Contoh: (0295) 123456"
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
 
@@ -273,7 +273,7 @@ export default function AdminProfilPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Contoh: sdnwedusan@gmail.com"
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
 
@@ -284,7 +284,7 @@ export default function AdminProfilPage() {
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="Contoh: www.sdnwedusan.sch.id"
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
           </div>
@@ -303,7 +303,7 @@ export default function AdminProfilPage() {
                     value={logoPemdaUrl}
                     onChange={(e) => setLogoPemdaUrl(e.target.value)}
                     placeholder="Masukkan link gambar atau unggah file..."
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
                   />
                 </div>
                 <label className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all shrink-0 select-none">
@@ -323,7 +323,7 @@ export default function AdminProfilPage() {
                 </label>
               </div>
               {logoPemdaUrl && (
-                <div className="mt-2 flex items-center gap-3 bg-slate-955/60 p-3 rounded-xl border border-slate-800">
+                <div className="mt-2 flex items-center gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                   <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
@@ -374,7 +374,7 @@ export default function AdminProfilPage() {
                     value={logoSekolahUrl}
                     onChange={(e) => setLogoSekolahUrl(e.target.value)}
                     placeholder="Masukkan link gambar atau unggah file..."
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
                   />
                 </div>
                 <label className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all shrink-0 select-none">
@@ -394,7 +394,7 @@ export default function AdminProfilPage() {
                 </label>
               </div>
               {logoSekolahUrl && (
-                <div className="mt-2 flex items-center gap-3 bg-slate-955/60 p-3 rounded-xl border border-slate-800">
+                <div className="mt-2 flex items-center gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                   <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
@@ -453,7 +453,7 @@ export default function AdminProfilPage() {
                 value={namaKepsek}
                 onChange={(e) => setNamaKepsek(e.target.value)}
                 placeholder="Contoh: Sudarto, S.Pd"
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
 
@@ -464,7 +464,7 @@ export default function AdminProfilPage() {
                 value={nipKepsek}
                 onChange={(e) => setNipKepsek(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="Masukkan 18 digit NIP..."
-                className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-hidden focus:border-indigo-500"
               />
             </div>
           </div>

@@ -19,7 +19,7 @@ export default async function AdminLayout({
   const profil = await prisma.profilSekolah.findFirst();
 
   return (
-    <div className="flex-1 min-h-screen bg-slate-955 text-slate-105 flex flex-col md:flex-row">
+    <div className="flex-1 min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
       {/* Sidebar Navigasi */}
       <aside className="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between shrink-0">
         <div>

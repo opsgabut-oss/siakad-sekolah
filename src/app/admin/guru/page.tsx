@@ -342,7 +342,7 @@ export default function AdminGuruPage() {
                   value={nip}
                   onChange={(e) => setNip(e.target.value.replace(/[^0-9]/g, ''))}
                   placeholder="Masukkan NIP (jika PNS)..."
-                  className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
                 />
               </div>
 
@@ -357,7 +357,7 @@ export default function AdminGuruPage() {
                   value={nik}
                   onChange={(e) => setNik(e.target.value.replace(/[^0-9]/g, ''))}
                   placeholder="Masukkan NIK KTP..."
-                  className="w-full px-4 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-hidden focus:border-indigo-500"
                 />
               </div>
 

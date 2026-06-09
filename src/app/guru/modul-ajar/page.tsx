@@ -485,13 +485,13 @@ export default function GuruModulAjarPage() {
                 </a>
                 <button
                   onClick={() => handleOpenEdit(item)}
-                  className="px-3 py-1.5 bg-slate-955 border border-slate-850 hover:bg-slate-800 text-indigo-400 hover:text-indigo-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                  className="px-3 py-1.5 bg-slate-950 border border-slate-850 hover:bg-slate-800 text-indigo-400 hover:text-indigo-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
                 >
                   <Edit3 size={12} /> Edit
                 </button>
                 <button
                   onClick={() => handleDelete(item.id)}
-                  className="p-1.5 bg-slate-955 border border-slate-850 hover:bg-rose-950/20 text-slate-500 hover:text-rose-450 rounded-xl transition-all cursor-pointer"
+                  className="p-1.5 bg-slate-950 border border-slate-850 hover:bg-rose-950/20 text-slate-500 hover:text-rose-450 rounded-xl transition-all cursor-pointer"
                 >
                   <Trash2 size={13} />
                 </button>

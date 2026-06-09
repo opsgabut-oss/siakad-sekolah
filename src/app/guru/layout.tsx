@@ -20,7 +20,7 @@ export default async function GuruLayout({
   const profil = await prisma.profilSekolah.findFirst();
 
   return (
-    <div className="flex-1 min-h-screen bg-slate-955 text-slate-100 flex flex-col">
+    <div className="flex-1 min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* Top Mobile Navbar */}
       <header className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800 shadow-md">
         <div className="px-4 py-3 flex items-center justify-between max-w-5xl mx-auto w-full">

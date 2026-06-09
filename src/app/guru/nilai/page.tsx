@@ -509,7 +509,7 @@ export default function InputNilaiPage() {
             <select
               value={selectedSesiIndex}
               onChange={(e) => setSelectedSesiIndex(parseInt(e.target.value, 10))}
-              className="w-full px-3 py-2.5 bg-slate-955 border border-slate-800 rounded-xl text-white text-xs font-medium focus:outline-hidden focus:border-indigo-500 transition-colors"
+              className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-medium focus:outline-hidden focus:border-indigo-500 transition-colors"
             >
               {sesiList.map((s, idx) => (
                 <option key={idx} value={idx}>
@@ -592,7 +592,7 @@ export default function InputNilaiPage() {
                                     placeholder="-"
                                     value={studentGrades[field as keyof typeof studentGrades] ?? ''}
                                     onChange={(e) => handleGradeChange(row.siswaId, field, e.target.value)}
-                                    className="w-12 px-1 py-1.5 bg-slate-955 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 rounded-xl text-center text-xs font-bold text-white placeholder-slate-800 focus:outline-hidden"
+                                    className="w-12 px-1 py-1.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 rounded-xl text-center text-xs font-bold text-white placeholder-slate-800 focus:outline-hidden"
                                   />
                                 </td>
                               ))}
